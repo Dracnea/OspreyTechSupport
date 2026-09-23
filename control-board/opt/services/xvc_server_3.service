@@ -1,0 +1,14 @@
+[Unit]
+Description=xvc_server
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/xvc_server/xvc_server /dev/uio3 2543
+Restart=on-failure
+RestartSec=1
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

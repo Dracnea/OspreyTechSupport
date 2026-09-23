@@ -1,0 +1,15 @@
+[Unit]
+Description=ironfish_tari_os
+Wants=network.target
+After=syslog.target network-online.target controller.service updatemac.service
+
+
+[Service]
+Type=simple
+ExecStart=/opt/ironfish_tari_os/startironfish_tari_os.sh
+Restart=always
+RestartSec=5
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

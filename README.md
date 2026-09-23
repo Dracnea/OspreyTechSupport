@@ -1,4 +1,29 @@
 # OspreyTechSupport
-Collection of DeObfuscated files related to Osprey FPGA Firmware.
+Collection of DeObfuscated files related to Osprey FPGA miners
 
-To be used for backup, recovery, and open source mining uses.
+## Osprey E335 — backup and recovery kit
+
+Everything needed to back up an Osprey E335, rebuild its SD card from scratch,
+and understand the control board well enough to keep a unit running.
+
+| directory | what's in it |
+|---|---|
+| [`firmware/`](firmware/) | A complete E335 SD card image — Osprey firmware **N2.0.30**, algorithms **A2.2.12**: the raw boot partition and the root filesystem, cleaned for sharing. |
+| [`tools/`](tools/) | `flash-e335-sd.sh` writes a new card from `firmware/`; `verify-e335-sd.sh` checks it before you boot it; `e335-vccint.sh` reads/sets VCCINT with per-module readback; `e335_vrm_read.c` reads the regulators directly on the box. |
+| [`bitstreams/`](bitstreams/) | Osprey's own E335 bitstreams (Astrix, Hoohash, Tari v1–v3) with loader-ready md5sum files. |
+| [`control-board/`](control-board/) | Loose copies of Osprey's control-board software: controller, OTA updaters, miners and loaders, services, web UI, and the controller's C/C++ source. |
+| [`docs/`](docs/) | [Hardware, access and the control board](docs/E335-overview.md) · [Voltage control](docs/E335-voltage-control.md) · [SD card failure, backup and recovery](docs/E335-sd-card-recovery.md) |
+
+### Dead or dying SD card? Quick start
+
+```sh
+git clone https://github.com/Dracnea/OspreyTechSupport.git
+cd OspreyTechSupport/tools
+lsblk                                    # find the card, e.g. /dev/sdb
+sudo DEV=/dev/sdb ./flash-e335-sd.sh
+sudo DEV=/dev/sdb ./verify-e335-sd.sh
+```
+
+Put the card in the E335 and power it on. It comes up on DHCP; log in with
+`ssh ubuntu@<address>` (password `temppwd` — change it), then install a bitstream
+from `bitstreams/` and pick a miner in the web UI at `http://<address>/`.

@@ -1,0 +1,16 @@
+[Unit]
+Description=client_handle
+Wants=network.target
+After=syslog.target network-online.target controller.service updatemac.service webserver.service
+
+[Service]
+Type=simple
+User=root
+ExecStartPre=/bin/sleep 10
+ExecStart=/opt/client_handle/client_handle
+Restart=on-failure
+RestartSec=60
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

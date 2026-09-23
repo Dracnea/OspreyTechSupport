@@ -1,0 +1,331 @@
+
+<html xmlns="http://www.w3.org/1999/xhtml" >
+    <head>
+        <title>Notifications</title>
+        <script>
+        $(document).ready(function () 
+            { 
+               getemailNoti();
+            })
+
+            function toggleSwitch(input)
+            {
+                if (document.getElementById("id_enable_send_noti").checked == true) {
+                    document.getElementById("show_config_noti").style.display = "block";
+                } else {
+                    document.getElementById("show_config_noti").style.display = "none";
+                }
+            }
+
+
+           function getemailNoti()
+            {  
+                $.ajax(
+                {
+                    type: "POST",
+                    url: "/cgi-bin/qcmap_web_cgi.cgi",
+                    data:
+                    {
+                        Page: "getDracaenaNotifications",
+                    },
+                    dataType: "text",
+                    success: function(msgs)
+                    {   
+
+                        if(msgs.length > 0)
+                        {  
+                            obj = jQuery.parseJSON(msgs);
+
+                            if (obj.enable_noti == 1)
+                            {
+                                document.getElementById("id_enable_send_noti").checked = true;
+                            }
+                            else
+                            {
+                                document.getElementById("id_enable_send_noti").checked = false;
+                            }
+
+                                            
+
+                            if (obj.enable_noti == true)
+                            {
+                                document.getElementById("show_config_noti").style.display = "block";
+                            }
+                            else
+                            {
+                                document.getElementById("show_config_noti").style.display = "none";
+                            }
+
+                            //document.getElementById("id_enable_send_noti").value = obj.enable_noti;                       
+                            document.getElementById("destination_email").value = obj.desti_email_noti;
+                            if (obj.over_heat_temp_noti == 1)
+                            {
+                                document.getElementById("noti_temp").checked = true
+                            }
+                            else
+                            {
+                                document.getElementById("noti_temp").checked = false
+                            }
+
+                            document.getElementById("time_interval").value = obj.frequency_noti;
+
+/*                            if (obj.enable_hash_noti == 1)
+                            {
+                                document.getElementById("noti_hashrate").checked = true
+                            }
+                            else
+                            {
+                                document.getElementById("noti_hashrate").checked = false
+                            }*/
+
+                            if (obj.enable_miner_status_noti == 1)
+                            {
+                                document.getElementById("not_mining_status").checked = true
+                            }
+                            else
+                            {
+                                document.getElementById("not_mining_status").checked = false
+                            }
+
+
+                            if (obj.enable_fan_noti == 1)
+                            {
+                                document.getElementById("noti_fans").checked = true
+                            }
+                            else
+                            {
+                                document.getElementById("noti_fans").checked = false
+                            }  
+
+                            document.getElementById("noti_temp_limit").value = obj.chip_temp_noti;
+
+
+                            // {"enable_noti":"0","desti_email_noti":"0","chip_temp_noti":"70","frequency_noti":"1","enable_hash_noti":"1","enable_fan_noti":"1","over_heat_temp_noti":"1","enable_miner_status_noti":"1"}
+
+                        }
+                        else
+                            alert("No Reply from server.");
+                    },
+                    error: function(xhr, textStatus, errorThrown)
+                    {
+                        alert("fail")
+                    }
+                });
+            }
+
+            
+            function ApplyConfigNoti( ) {
+                var time_interval = 1;
+                var noti_temp = 0;
+                var noti_temp_value = 70;
+
+                var noti_mining_status = 0;
+                var noti_fan_into = 0;
+                var noti_hashrate = 0;
+                var enable_noti = 0 ; 
+
+                if (document.getElementById("time_interval").value >= 1 && document.getElementById("time_interval").value < 25)
+                {
+                    time_interval = document.getElementById("time_interval").value;
+                }
+
+                if (document.getElementById("noti_temp").checked == true)
+                    noti_temp = 1;
+
+                if (document.getElementById("not_mining_status").checked == true)
+                    noti_mining_status = 1;
+
+
+                if (document.getElementById("noti_fans").checked == true)
+                    noti_fan_into = 1;
+
+         /*       if (document.getElementById("noti_hashrate").checked == true)
+                    noti_hashrate = 1;*/
+
+                if (document.getElementById("id_enable_send_noti").checked == true)
+                {
+                    if (document.getElementById("noti_temp_limit").value < 40 || document.getElementById("noti_temp_limit").value > 100)
+                    {
+                        alert("Overheat temperature value  from 40 to 100");
+                        return;
+                    }
+
+                    enable_noti = 1;
+                }
+
+
+                $.ajax(
+                {
+                    type: "POST",
+                    url: "/cgi-bin/qcmap_web_cgi.cgi",
+                    data:
+                    {
+                        Page: "setDracaenaNotifications",
+                        enable:        enable_noti,
+                        denstination_email: document.getElementById("destination_email").value,
+                        noti_temp_value : document.getElementById("noti_temp_limit").value,
+                        time_interval: time_interval,
+                        noti_hashrate: noti_hashrate,
+                        noti_fan_into: noti_fan_into,
+                        over_heat_temp_noti: noti_temp,
+                        noti_mining_status: noti_mining_status,
+    
+                    },
+                    dataType: "text",
+                    success: function(msgs)
+                    {
+                        if(msgs.length > 0)
+                        {
+                            alert("Apply configuration")
+                        }
+                        else
+                            alert("No Reply from server.");
+                    },
+                    error: function(xhr, textStatus, errorThrown)
+                    {
+                        alert("fail")
+                    }
+                });
+            }
+        </script>
+ 
+
+        <style>
+        .switch-wp {
+                background: #EBEAEA;
+                width: 80px;
+                
+                border-radius: 20px;
+        }
+        
+        .switch-wp label {
+                width: 40px;
+                height: 40px;
+                background: #ffffff;
+                border-radius: 50%;
+                display: block;
+                transition: 0.5s;
+                border: 1px solid #EBEAEA;                                
+
+        }
+        
+        .switch-wp input:checked + label {
+                margin-left: 80px;
+                transform: translateX(-100%);
+                background: #44a54e;
+
+        }
+        </style>
+ 
+ 
+
+    </head>
+    <body  align="left" valign="left">
+    <table style="background-color: #ffffff; border-top-left-radius; 12px; border-top-right-radius: 12px; border-top-left-radius: 12px; width: 450px; padding: 20px 20px 20px 20px;"><tr   ><td style="font-size: 30;color: #8C8787;font-weight: bold;">Notification settings</td></tr>  </table  >
+
+
+    <table style="background-color: #ffffff; padding-left: 20px; padding-bottom: 20px; width: 450px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;" cellpadding="10px">
+    <tr> 
+    <td class="Td_Name" style="width:250px; font-size: 16; color: #8C8787;">Automatic send notification</td> 
+    <td class="Td_Value"> 
+        <!--select  id="id_enable_send_noti"  style="width: 250px; height: 40px; border: 1px solid #B5B1B1;
+border-radius: 6px;" onchange="change_noti_on_off(this)">
+            <option value="1" selected="selected">Enable</option>
+            <option value="0">Disable</option>
+        </select-->
+        <div class="switch-wp"  >
+        <input type="checkbox" id="id_enable_send_noti" onchange="toggleSwitch()" hidden="">
+
+        <label for="id_enable_send_noti">
+        </label></div>
+
+
+        </td>
+
+    </td>
+    </tr>
+</table>
+<br><br>
+    <div id="show_config_noti" style="display:block;"> 
+
+    <table cellpadding="10px" style="background-color: #ffffff; padding: 20px 20px 20px 20px; width: 1140px; border-radius: 12px;">
+
+       <tr>
+    <td  class="Td_Name" class="Td_Name" style="width:250px; font-size: 16;color: #8C8787;">
+        Notification period
+    </td>
+    <td>
+      <select  id="time_interval"  style="width: 250px; height:40px;color: #8C8787; border: 1px solid #B5B1B1;
+border-radius: 6px; background-color: white;">
+            <option value="1" >once per 1 hour</option>
+            <option value="2" >once per 2 hours</option>
+            <option value="3" >once per 3 hours</option>
+            <option value="4" >once per 4 hours</option>
+            <option value="5" >once per 5 hour</option>
+            <option value="6" >once per 6 hours</option>
+            <option value="7" >once per 7 hours</option>
+            <option value="8" >once per 8 hours</option>
+            <option value="9" >once per 9 hour</option>
+            <option value="10" >once per 10 hours</option>
+            <option value="11" >once per 11 hours</option>
+            <option value="12" >once per 12 hours</option>
+            <option value="24" >once per day</option>
+
+            </select>
+    </td>      
+    </tr>
+    <tr>
+        <td  class="notifi-Td_Name">
+            Destination email address
+        </td>
+        <td><input type="text" id="destination_email" name="" class="notifi-input"></td>      
+    </tr>
+
+    <tr>
+        <td  class="notifi-Td_Name">
+            Overheat temperature value 
+        </td>
+        <td><input type="text" id="noti_temp_limit" name="" class="notifi-input"></td>      
+    </tr>
+
+
+
+    <tr>
+        <td  class="notifi-Td_Name">
+            FPGA Temperatures
+        </td>
+        <td><input type="checkbox" id="noti_temp" name="" class="notifi-checkbox"></td>      
+    </tr>
+
+    <tr>
+        <td  class="notifi-Td_Name">
+            Mining status
+        </td>
+        <td><input type="checkbox" id="not_mining_status" name="" class="notifi-checkbox"></td>      
+    </tr>
+
+    <tr>
+        <td  class="notifi-Td_Name">
+            Fans Information
+        </td>
+        <td><input type="checkbox" id="noti_fans" name="" class="notifi-checkbox"></td>      
+    </tr>
+
+<!--     <tr>
+        <td  class="notifi-Td_Name">
+            Hashrate 
+        </td>
+        <td><input type="checkbox" id="noti_hashrate" name="" class="notifi-checkbox"></td>      
+    </tr> -->
+
+
+    </table>
+    </div>
+
+    <div   style="display:block;"> 
+        <center style="padding-top: 30px;">
+            <input type="button" value="Apply" style="cursor: pointer;" onclick="ApplyConfigNoti()">
+        </center>
+    </div>
+    </body>
+</html>

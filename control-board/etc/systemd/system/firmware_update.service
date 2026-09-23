@@ -1,0 +1,15 @@
+[Unit]
+Description=firmware_update
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sleep 2
+ExecStart=/opt/firmware/firmware_update opt/firmware/ https://github.com/PachiraMining/E300_firmware_new.git
+Restart=always
+WatchdogSec=10000
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,671 @@
+<html>
+   <head>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+<script>
+
+    var file_name_fw = "";
+    var obj;
+    var old_ota_enable = 0;
+
+    $(function() 
+    {
+         get_firmare_status();
+    });
+
+
+    function select_update(inputValue)
+    {   
+        if (old_ota_enable == 1)
+        {
+
+            if(inputValue.value === "true") 
+            {
+                document.getElementById("manualupdate").style.display = "none";
+                document.getElementById("div_show_apply").style.display = "block";
+            }
+            else
+            {
+               document.getElementById("manualupdate").style.display = "none";
+               document.getElementById("div_show_apply").style.display = "block";
+
+            }           
+        }
+        else 
+        {
+            if(inputValue.value === "true") 
+            {            
+                document.getElementById("manualupdate").style.display = "none";
+                document.getElementById("div_show_apply").style.display = "block";
+
+            }
+            else
+            {
+               document.getElementById("manualupdate").style.display = "block";
+               document.getElementById("div_show_apply").style.display = "none";
+            }            
+        }
+
+    }
+
+ 
+
+    function getDracaenaAlgoConfigurate() 
+    {   
+        $.ajax(
+        {
+            type: "POST",
+            url: "/cgi-bin/qcmap_web_cgi.cgi",
+            data:
+            {
+                Page: "getDracaenaAlgoConfigurate",
+                token:0,
+            },
+            dataType: "text",
+            success: function(msgs)
+            {   
+                
+                if(msgs.length > 0)
+                {   
+                    
+                    obj = jQuery.parseJSON(msgs);
+
+                    if (obj.result == "SUCCESS")
+                    {
+                        document.getElementById("git-link").value = obj.gitlink
+                        document.getElementById("git-key").value = obj.gitpassword;
+                        document.getElementById("current_algo").value = obj.current_algo;                        
+                    }
+
+                }
+                else
+                    alert("No Reply from server.");
+            },
+            error: function(xhr, textStatus, errorThrown)
+            {
+                //alert("fail")
+            }
+        }); 
+    }
+ 
+
+    function get_firmare_status( ) 
+    {
+        $.ajax(
+        {
+            type: "POST",
+            url: "/cgi-bin/qcmap_web_cgi.cgi",
+            data:
+            {
+                Page: "getDracaenaFirmwareStatus",
+                token:0,
+            },
+            dataType: "text",
+            success: function(msgs)
+            {   
+                
+                if(msgs.length > 0)
+                {   
+                    
+                     obj = jQuery.parseJSON(msgs);
+                    // alert(obj.autoupdate.firmwareVersion);
+                     document.getElementById("current_Fw").value = obj.autoupdate.firmwareVersion;
+                    
+                    if (obj.result == "SUCCESS")
+                    {   
+                       // $("#").text(obj.box_info_all.curentFanLevel)
+
+                        old_ota_enable = obj.autoupdate.otaUpdateEnable ;
+                        //old_ota_enable = 1;
+                        if (old_ota_enable == 1 )
+                        {    
+                           // $("#CURRENT_VERSION_LABLE").text(obj.autoupdate.firmwareVersion);
+                           
+                           document.getElementById("enable_upate_ota").value = "true";
+                           document.getElementById("manualupdate").style.display = "none";
+
+                        }
+                        else
+                        {
+                           document.getElementById("enable_upate_ota").value = "false";
+                           document.getElementById("manualupdate").style.display = "block";
+                           document.getElementById("div_show_apply").style.display = "none";
+                           
+
+
+                        }
+
+                         getDracaenaAlgoConfigurate();
+                    } 
+
+                }
+                else
+                    alert("No Reply from server.");
+            },
+            error: function(xhr, textStatus, errorThrown)
+            {
+                //alert("fail")
+            }
+        }); 
+    }
+
+ 
+
+   function set_algorithm_status() 
+    {
+        $.ajax(
+        {
+            type: "POST",
+            url: "/cgi-bin/qcmap_web_cgi.cgi",
+            data:
+            {
+                Page: "setDracaenaAlgoStatus",
+                gitlink: document.getElementById("git-link").value,
+                gitpassword: document.getElementById("git-key").value,
+                token:0
+            },
+            dataType: "text",
+            success: function(msgs)
+            {   
+                
+                if(msgs.length > 0)
+                {   
+                    
+                     obj = jQuery.parseJSON(msgs);
+                    // alert(obj.autoupdate.firmwareVersion);
+                    if (obj.algo.algorithmVersion !== undefined)
+                    {
+                     document.getElementById("current_algo").value = obj.algo.algorithmVersion;
+                    }
+
+                }
+                else
+                    alert("No Reply from server.");
+            },
+            error: function(xhr, textStatus, errorThrown)
+            {
+                //alert("fail")
+            }
+        }); 
+    }
+ 
+    var fileCatcher = document.getElementById('file-catcher');
+    var fileInput = document.getElementById('file-input');
+    var fileListDisplay = document.getElementById('file-list-display');
+    var fileList = [];
+    var renderFileList, sendFile;
+  
+    fileCatcher.addEventListener('submit', function (evnt) 
+    {   
+        var input_lengh = document.getElementById('file-input').value.length;
+
+        file_name_fw = document.getElementById('file-input').value.replace(/^.*[\\\/]/, '')
+
+        if(input_lengh == 0)
+        {
+            alert("Please choose firmware file");
+            loadpage("N206upfirmware.html");
+            return;
+        }
+        else if (input_lengh > 128)
+        {
+            alert("Filename is too long. Please rename firmware file");
+            return;
+        }
+        else
+        {
+
+        }
+
+        // if (confirm("Are !") )
+        // {   
+            document.getElementById("progress").style.display = "block";
+            evnt.preventDefault();
+            fileList.forEach(function (file) 
+            {
+                sendFile(file);
+            });
+        //}
+    }   
+    );
+  
+    fileInput.addEventListener('change', function (evnt) 
+    {
+        fileList = [];
+        for (var i = 0; i < fileInput.files.length; i++) 
+        {   
+            fileList.push(fileInput.files[i]);
+            
+        }
+        renderFileList();
+    });
+  
+    renderFileList = function () 
+    {
+        fileListDisplay.innerHTML = '';
+        fileList.forEach(function (file, index) 
+        {
+            var fileDisplayEl = document.createElement('p');
+            fileDisplayEl.innerHTML = (index + 1) + ': ' + file.name;
+            fileListDisplay.appendChild(fileDisplayEl);
+        });
+    };
+  
+    sendFile = function (file) 
+    {   
+        var formData = new FormData();
+        var request = new XMLHttpRequest();
+        var progressBar = document.getElementById("progress");
+        var display = document.getElementById("display");
+
+        formData.set('file', file, 'upgrade' + " " + file.name);
+        request.open("POST", "/cgi-bin/qcmap_web_cgi.cgi");
+
+        request.upload.onprogress = function (e) 
+        {
+            if (e.lengthComputable) 
+            {
+                progressBar.max = e.total;
+                progressBar.value = e.loaded;
+                display.innerText = Math.floor((e.loaded / e.total) * 100) + '%';
+            }
+        }
+
+        request.upload.onloadstart = function (e) 
+        {
+            progressBar.value = 0;
+            display.innerText = '0%';
+        }
+
+        request.upload.onloadend = function (e) 
+        {
+            progressBar.value = e.loaded;
+        }
+
+        request.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) 
+        {
+
+            if(this.responseText.includes("\"result\":\"SUCCESS\""))
+            {
+              alert("Upload file success, Please wait about one minute for sync");
+            }
+        }};
+
+        request.send(formData);
+    };
+          
+
+//} );
+
+    var file_name_fw = "";
+
+// $(document).ready(function () 
+// {
+    var fileCatcherBit = document.getElementById('file-catcher-bit');
+    var fileInputBit = document.getElementById('file-input-bit');
+    var fileListDisplayBit = document.getElementById('file-list-display-bit');
+    var fileListBit = [];
+    var renderFileListBit, sendFileBit;
+  
+    fileCatcherBit.addEventListener('submit', function (evnt) 
+    {   
+        var input_lengh = document.getElementById('file-input-bit').value.length;
+
+        file_name_fw = document.getElementById('file-input-bit').value.replace(/^.*[\\\/]/, '')
+
+        if(input_lengh == 0)
+        {
+            alert("Please choose bitstream file");
+            return;
+        }
+        else if (input_lengh > 128)
+        {
+            alert("Filename is too long. Please rename firmware file");
+            return;
+        }
+        else
+        {
+
+        }
+
+        // if (confirm("The update process takes about 3 minutes to complete. After that your device will reboot!") )
+        // {   
+            document.getElementById("progress").style.display = "block";
+            evnt.preventDefault();
+            fileListBit.forEach(function (file) 
+            {
+                sendFileBit(file);
+            });
+        //}
+    }   
+    );
+  
+    fileInputBit.addEventListener('change', function (evnt) 
+    {
+        fileListBit = [];
+        for (var i = 0; i < fileInputBit.files.length; i++) 
+        {   
+            fileListBit.push(fileInputBit.files[i]);
+            
+        }
+        renderFileListBit();
+    });
+  
+    renderFileListBit = function () 
+    {
+        fileListDisplayBit.innerHTML = '';
+        fileListBit.forEach(function (file, index) 
+        {
+            var fileDisplayEl = document.createElement('p');
+            fileDisplayEl.innerHTML = (index + 1) + ': ' + file.name;
+            fileListDisplayBit.appendChild(fileDisplayEl);
+        });
+    };
+  
+    sendFileBit = function (file) 
+    {   
+        var formData = new FormData();
+        var request = new XMLHttpRequest();
+        var progressBar = document.getElementById("progress-bit");
+        var display = document.getElementById("display-bit");
+
+        formData.set('file', file, 'upgrade' + " " + file.name);
+        request.open("POST", "/cgi-bin/qcmap_web_cgi.cgi");
+
+        request.upload.onprogress = function (e) 
+        {
+            if (e.lengthComputable) 
+            {
+                progressBar.max = e.total;
+                progressBar.value = e.loaded;
+                display.innerText = Math.floor((e.loaded / e.total) * 100) + '%';
+            }
+        }
+
+        request.upload.onloadstart = function (e) 
+        {
+            progressBar.value = 0;
+            display.innerText = '0%';
+        }
+
+        request.upload.onloadend = function (e) 
+        {
+            progressBar.value = e.loaded;
+        }
+
+        request.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) 
+        {
+
+            if(this.responseText.includes("\"downgrade\":\"0\""))
+            {
+                if(confirm("UPLOAD BITSTREAM FILE SUCCESS"))
+                {  
+                    dracaenaUploadBit();
+                }
+            }
+        }};
+
+        request.send(formData);
+    };
+
+function dracaenaUploadBit()
+{
+        $.ajax(
+        {
+            type: "POST",
+            url: "/cgi-bin/qcmap_web_cgi.cgi",
+            data:
+            {
+                Page: "dracaUploadBit",
+                file_name :  file_name_fw,
+            },
+            dataType: "text",
+            success: function(msgs)
+            {
+                if(msgs.length > 0)
+                {
+                    // var obj = jQuery.parseJSON(msgs);
+                    // if(obj.result == "AUTH_FAIL")
+                    // {
+                    //     document.getElementById("div_menu_content").style.display = "none";
+                    //     loadpage('N203login.html');
+                    //     alert("Device is being configured by a different IP: relogin");
+                    //     return;
+                    // }
+                    // if(obj.result == "Token_mismatch")
+                    // {
+                    //     document.getElementById("div_menu_content").style.display = "none";
+                    //     loadpage('N203login.html');
+                    //     alert("Unauthorised request: relogin");
+                    //     return;
+                    // }
+
+                    alert("UP LOAD BIT SUCCESS");
+                }
+                else
+                {
+                alert("No Reply from server."); 
+                }
+            },
+            error: function(xhr, textStatus, errorThrown)
+            {
+            }
+        }) 
+}
+
+function set_enable_disable_OTA()
+{       
+        var enable = 0;
+        if (document.getElementById("enable_upate_ota").value === "true")
+        {
+            enable = 1;
+        }
+        $.ajax(
+        {
+            type: "POST",
+            url: "/cgi-bin/qcmap_web_cgi.cgi",
+            data:
+            {
+                Page: "setDracaenaEnableDisableOTA",
+                set_enable_disable_ota: enable,
+                token:0,
+            },
+            dataType: "text",
+            success: function(msgs)
+            {   
+                 
+                if(msgs.length > 0)
+                {   
+                    
+                     obj = jQuery.parseJSON(msgs);
+                    if (obj.result == "SUCCESS")
+                    {   
+                        alert('Apply success'); 
+                    }
+                    else
+                    {
+                        alert(" Apply fail");
+                    }
+                     loadpage('N206upfirmware.html'); 
+
+                }
+                else
+                    alert("No Reply from server.");
+            },
+            error: function(xhr, textStatus, errorThrown)
+            {
+                //alert("fail")
+            }
+        });  
+}
+</script>
+
+</head>
+<body>
+
+<table style="background-color: #ffffff; padding-left: 20px; border-top-left-radius: 12px; border-top-right-radius: 12px; width: 1140px; padding-top: 20px;"><tr  ><td style="font-size: 30; color: #8C8787; font-weight: bold;">Firmware upgrade</td></tr></table  >
+
+<table style="background-color: #ffffff; padding-left: 20px; width: 1140px;" cellpadding="10px">
+    <tr>
+        <td>
+            <table id="table1" style="background-color: #0065B2; width: 250px; border-radius: 12px; padding-top: 10px; padding-left: 20px; padding-bottom:10px;">
+                <tr>    
+                    <td class="Td_Name" style="width:250px; font-size: 16; font-weight: lighter; color: #ffffff;">Firmware version</td> 
+                </tr>
+                <tr>    
+                    <td class="Td_Value"><input type="text" id="current_Fw" style="width:120; height: 40; font-size: 16; font-weight: bold; color:white; background-color: #0065B2; border: none;" disabled></td>   
+                </tr>        
+            </table>
+        </td>
+        <td style="text-align: right; padding-left: 500px" hidden>
+            <table id="table2" style="background-color: #0065B2; width: 250px; border-radius: 12px; padding-top: 10px; padding-left: 20px; padding-bottom:10px;">
+                <tr>    
+                    <td class="Td_Name" style="width:250px; font-size: 16; font-weight: lighter; color: #ffffff;">Latest firmware</td> 
+                </tr>
+                <tr>    
+                    <td class="Td_Value"><input type="text" value="N2.0.29"  style="width:120; height: 40; font-size: 16; font-weight: bold; color:white; background-color: #0065B2; border: none;" disabled></td>   
+                </tr>        
+            </table>
+        </td>
+    </tr>
+</table>
+
+<table style="background-color: #ffffff; padding-left: 20px; width: 1140px;" cellpadding="10px">
+
+<tr>
+<td class="Td_Name" style="width:300px; color: #8C8787; font-size: 16; font-weight: lighter;">Enable auto update firmware</td> 
+<td width="30px" align="center"></td>         
+<td class="Td_Value">  <select name="" id="enable_upate_ota" onchange="select_update(this)" style="height: 40px; color: #8C8787; background-color: white; border: 1px solid #B5B1B1; border-radius: 5px;">
+<option value="true">Auto Update</option>
+<option value="false">Manual</option>    
+</select>    
+</td>
+</tr>
+
+</table>
+ 
+
+<div style="display: none; background-color: #ffffff; padding-left: 20px; width: 1120px; padding-bottom: 30px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px;" id="manualupdate">
+
+<table cellpadding="10px">  
+    <tr>
+        <td style="font-size: 16px; font-weight: lighter; color: #8C8787;">Choose a firmware file</td><td> </td><td>   </td>
+    </tr>
+</table>
+
+<div style="display: none; background-color: #ffffff; padding-left: 20px;";>
+<progress id="progress" value="0" style="width: 70%;height: 20px;display: block;"></progress><span id="display"></span>
+</div>
+  
+<form id='file-catcher'>
+    <br>  
+    <input id='file-input' type='file' >
+    <div id='file-list-display'></div>
+    <center>
+    <button class="submitUp" id="submitUp"  type='submit'>Upgrade firmware</button>
+    </center>
+</form>
+
+</div>
+
+<div id="div_show_apply" style="display: block; background-color: #ffffff; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; padding-bottom: 30px; width: 1140px;">
+<br>
+<center>
+<input type="button" value="Save" onclick=" set_enable_disable_OTA()">
+</center>
+</div>
+
+<br> <br>
+
+<table style="background-color: #ffffff; padding-left: 20px; border-top-left-radius: 12px; border-top-right-radius: 12px; width: 1140px; padding-top: 20px;">
+    <tr  ><td style="font-size: 30; color: #8C8787; font-weight: bold;">Algorithm settings/status</td></tr>
+ 
+
+</table  >
+
+
+<table style="background-color: #ffffff; padding-left: 20px; width: 1140px;" cellpadding="10px">
+    <tr>
+        <td>
+            <table id="table3" style="background-color: #0065B2; width: 250px; border-radius: 12px; padding-top: 10px; padding-left: 20px; padding-bottom:10px;">
+                <tr>    
+                    <td class="Td_Name" style="width:250px; font-size: 16; font-weight: lighter; color: #ffffff;">Algorithm version</td> 
+                </tr>
+                <tr>    
+                    <td class="Td_Value"><input type="text" id="current_algo" style="width:120; height: 40; font-size: 16; font-weight: bold; color:white; background-color: #0065B2; border: none;" disabled></td>   
+                </tr>        
+            </table>
+        </td>
+
+    </tr>
+            <tr  ><td style=" color: #8C8787;  ">This feature allows miners to help us verify algorithms/bitstreams before the official release; it also helps us debug issues more easily whenever users need assistance. <br>
+
+By default, please leave both 'Git Link' and 'Git Key' empty. <br>
+
+If you set a Git link or key, you can revert to the default by clearing 'Git Link' and 'Git Key' and clicking 'Save'."
+
+     </td></tr>
+</table>
+
+
+<table style="background-color: #ffffff; padding-left: 20px; width: 1140px;" cellpadding="10px">
+
+    <tr>  
+    <td class="ethminer-Td_Name1" > Git Link</td> 
+    <td class="ethminer-:">:</td>         
+    <td class="Td_Value">
+    <input id="git-link" class="miner-input" style="width:800px;" > 
+    </td>
+    </tr>
+    <tr>  
+    <td class="ethminer-Td_Name1" > Git Key</td> 
+    <td class="ethminer-:">:</td>         
+    <td class="Td_Value">
+    <input id="git-key" class="miner-input" style="width:800px;" > 
+    </td>
+    </tr>
+
+
+</table>
+
+<!-- 
+ <table style="background-color: #ffffff; padding-left: 20px; width: 1140px;" cellpadding="10px">
+    <tr>   
+    <div id="div_stop" style="display:block ;"> 
+        <center>
+            <input type="button" value="Save" style="cursor: pointer;" onclick="ApplyConfig()">
+        </center>
+    </div>
+     </tr>
+</table>
+ -->
+<!-- 
+ <table style="background-color: #ffffff; padding-left: 20px; border-radius: 12px; width: 1140px; padding-top: 20px; padding-bottom: 20px;">
+    <tr>
+        <td style="font-size: 30px; color: #8C8787; font-weight: bold;">Alogirthm settings/status</td>
+    </tr>
+</table>
+ -->
+
+<table style="background-color: #ffffff; padding-left: 20px; width: 1140px; padding-top: 20px; padding-bottom: 20px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+
+    <tr>   
+        <td style="text-align: center;">
+            <input type="button" value="Save" style="cursor: pointer;" onclick="set_algorithm_status()">
+        </td>
+    </tr>
+</table>
+
+
+</table>
+ 
+
+
+ 
+
+
+</body>
+</html>

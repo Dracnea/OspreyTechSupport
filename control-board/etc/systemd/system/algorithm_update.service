@@ -1,0 +1,15 @@
+[Unit]
+Description=algorithm_update
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sleep 8
+ExecStart=/opt/algorithm/algorithm_update /opt/algorithm/ https://github.com/PachiraMining/Algorithm-official-release-v2.git
+Restart=always
+WatchdogSec=12000
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

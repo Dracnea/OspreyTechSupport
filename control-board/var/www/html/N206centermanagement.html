@@ -1,0 +1,145 @@
+<html xmlns="http://www.w3.org/1999/xhtml" >
+    <head>
+        <title>IP Setting</title>
+
+        <script>
+
+        $(function() 
+        {
+               gen_center_management();
+        });
+
+
+        function Apply_centermanagement() 
+        {
+            var enable  = 0;
+            if (document.getElementById("enable_center").checked == true)
+            {
+                enable = 1; 
+            }
+        $.ajax(
+        {
+            type: "POST",
+            url: "/cgi-bin/qcmap_web_cgi.cgi",
+            data:
+            {
+                Page: "setDracaenaCenterManagement",
+                enable: enable,
+                username: document.getElementById("username").value,
+                groupname: document.getElementById("group_name").value,
+                token:0,
+            },
+            dataType: "text",
+            success: function(msgs)
+            {   
+                
+                if(msgs.length > 0)
+                {   
+                    
+                     obj = jQuery.parseJSON(msgs);
+                    if (obj.result == "SUCCESS")
+                    {   
+                        loadpage('N206centermanagement.html');  
+                    }
+                    else
+                    {
+                         
+                    }
+
+                }
+                else
+                    alert("No Reply from server.");
+            },
+            error: function(xhr, textStatus, errorThrown)
+            {
+                //alert("fail")
+            }
+        }); 
+        }
+
+
+        function gen_center_management() 
+        {
+
+        $.ajax(
+        {
+            type: "POST",
+            url: "/cgi-bin/qcmap_web_cgi.cgi",
+            data:
+            {
+                Page: "getDracaenaCenterManagement",
+
+            },
+            dataType: "text",
+            success: function(msgs)
+            {   
+
+                if(msgs.length > 0)
+                {  
+                    obj = jQuery.parseJSON(msgs);
+   
+
+                    if (obj && obj.enable !== undefined && obj.username && obj.group) {
+                        if (obj.enable == 1) {
+                            document.getElementById("enable_center").checked = true;
+                        } else {
+                            document.getElementById("enable_center").checked = false;
+                        }
+
+                        document.getElementById("username").value = obj.username;
+                        document.getElementById("group_name").value = obj.group;
+                    } else {
+                        alert("CAN NOT GET INFORMATION \n");
+                    }
+                    
+
+                }
+                else
+                    alert("No Reply from server.");
+            },
+            error: function(xhr, textStatus, errorThrown)
+            {
+                //alert("fail")
+            }
+        }); 
+        }
+        
+      
+        </script>
+
+    </head>
+
+
+<body align="left" valign="left">
+    <table style="width: 1180px; background-color: #ffffff; padding-left: 20px;  border-top-left-radius: 12px; border-top-right-radius: 12px;padding-top: 20px">
+        <tr>
+            <td class="fan-td1">Center Management Settings</td>
+        </tr>
+    </table>
+    <table style="width: 1180px; background-color: #ffffff; padding-left: 20px; border-bottom-right-radius: 12px;  border-bottom-left-radius: 12px; padding-top: 20px; cellpadding:15px; ">
+        <tr>
+            <td class="Td_Name" style="width:280px; font-size:20; color: #8C8787;">Enable center management</td>
+            <td class="Td_Value" style="padding-top: 20px;">
+                <input type="checkbox" value="checked" id="enable_center" style="width: 40px; height:40px">
+            </td>
+        </tr>
+        <tr>
+            <td class="Td_Name" style="width:280px; font-size:20; color: #8C8787;">Group name</td>
+            <td><input type="textbox" id="group_name"></td>
+        </tr>
+
+                <tr>
+            <td class="Td_Name" style="width:280px; font-size:20; color: #8C8787;">User name</td>
+            <td><input type="textbox" id="username"></td>
+        </tr>
+        <tr>
+            <td colspan="2" style="text-align:center;">
+                <input type="button" value="Apply/Save changes" style="cursor: pointer;" onclick="Apply_centermanagement()">
+            </td>
+        </tr>
+    </table>
+    <br><br>
+</body>
+
+
+</html>

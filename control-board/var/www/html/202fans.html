@@ -1,0 +1,324 @@
+
+<html xmlns="http://www.w3.org/1999/xhtml" >
+    <head>
+        <title>Fans</title>
+        <script>
+
+            $(document).ready(function () 
+            { 
+               getInfofan();
+            })
+
+            function Apply_Fan_CURVE()
+            {   
+
+                if ( document.getElementById("level2").value < 0 || document.getElementById("level2").value > 120)
+                {
+                    alert ("Level 2 invalid, Please check again");
+                    return;
+                }
+                else if( document.getElementById("level3").value < 0 || document.getElementById("level3").value > 120)
+                {
+                    alert ("Level3  invalid, Please check again");
+                    return;
+                }
+                else if( document.getElementById("level4").value < 0 || document.getElementById("level4").value > 120)
+                {
+                    alert ("Level4  invalid, Please check again");
+                    return;
+                } 
+                else if( document.getElementById("level5").value < 0 || document.getElementById("level5").value > 120)
+                {
+                    alert ("Level5  invalid, Please check again");
+                    return;
+                }
+                else if( document.getElementById("level6").value < 0 || document.getElementById("level6").value > 120)
+                {
+                    alert ("Level6  invalid, Please check again");
+                    return;
+                } 
+                else if( document.getElementById("level7").value < 0 || document.getElementById("level7").value > 120)
+                {
+                    alert ("Level7  invalid, Please check again");
+                    return;
+                }
+                else if( document.getElementById("level8").value < 0 || document.getElementById("level8").value > 120)
+                {
+                    alert ("Level8  invalid, Please check again");
+                    return;
+                } 
+                else if( document.getElementById("level9").value < 0 || document.getElementById("level9").value > 120)
+                {
+                    alert ("Level9  invalid, Please check again");
+                    return;
+                }
+                else if( document.getElementById("level10").value < 0 || document.getElementById("level10").value > 120)
+                {
+                    alert ("Level10  invalid, Please check again");
+                    return;
+                }                                                 
+                $.ajax(
+                {
+                    type: "POST",
+                    url: "/cgi-bin/qcmap_web_cgi.cgi",
+                    data:
+                    {
+                        Page: "setDracaDevideFan",
+                        level1:        document.getElementById("level2").value,
+                        level2:        document.getElementById("level2").value,
+                        level3:        document.getElementById("level3").value,
+                        level4:        document.getElementById("level4").value,
+                        level5:        document.getElementById("level5").value, 
+                        level6:        document.getElementById("level6").value,
+                        level7:        document.getElementById("level7").value,
+                        level8:        document.getElementById("level8").value,
+                        level9:        document.getElementById("level9").value,
+                        level10:       document.getElementById("level10").value,
+                    },
+                    dataType: "text",
+                    success: function(msgs)
+                    {
+                        if(msgs.length > 0)
+                        {
+                            alert("ApplyConfig Done");
+                            document.getElementById("div_stop").style.display = "none";
+                            document.getElementById("div_start").style.display = "none"; 
+
+                            getConfig();
+                        }
+                        else
+                            alert("No Reply from server.");
+                    },
+                    error: function(xhr, textStatus, errorThrown)
+                    {
+                        alert("fail")
+                    }
+                });
+            }
+
+            function Apply_Fan_Mode_Speed()
+            {   
+
+                $.ajax(
+                {
+                    type: "POST",
+                    url: "/cgi-bin/qcmap_web_cgi.cgi",
+                    data:
+                    {
+                        Page: "setDracaFanModeandSpeed",
+                        fanmode: document.getElementById("id_board_fan_mode").value ,
+                        fanspeed: document.getElementById("manual_fan_level").value,
+                    },
+                    dataType: "text",
+                    success: function(msgs)
+                    {
+                        if(msgs.length > 0)
+                        {
+                            alert("ApplyConfig Done");
+                            getInfofan();
+                        }
+                        else
+                            alert("No Reply from server.");
+                    },
+                    error: function(xhr, textStatus, errorThrown)
+                    {
+                        alert("fail")
+                    }
+                });
+            }
+
+            function getInfofan()
+            {  
+                $.ajax(
+                {
+                    type: "POST",
+                    url: "/cgi-bin/qcmap_web_cgi.cgi",
+                    data:
+                    {
+                        Page: "getDracaFanInfo",
+                    },
+                    dataType: "text",
+                    success: function(msgs)
+                    {   
+
+                        if(msgs.length > 0)
+                        {  
+                            obj = jQuery.parseJSON(msgs);
+                            if (obj.result == "SUCCESS")
+                            {
+                                //document.getElementById("level1").value = obj.fans_info_all.temp_device[0].value;
+                                document.getElementById("level2").value = obj.fans_info_all.temp_device[1].value;
+                                document.getElementById("level3").value = obj.fans_info_all.temp_device[2].value;
+                                document.getElementById("level4").value = obj.fans_info_all.temp_device[3].value;
+                                document.getElementById("level5").value = obj.fans_info_all.temp_device[4].value;
+                                document.getElementById("level6").value = obj.fans_info_all.temp_device[5].value;
+                                document.getElementById("level7").value = obj.fans_info_all.temp_device[6].value;
+                                document.getElementById("level8").value = obj.fans_info_all.temp_device[7].value;
+                                document.getElementById("level9").value = obj.fans_info_all.temp_device[8].value;
+                                document.getElementById("level10").value = obj.fans_info_all.temp_device[9].value;
+
+                                if (obj.fans_info_all.fan_mode == 0)
+                                {
+                                    document.getElementById("id_board_fan_mode").value = 0;
+                                    document.getElementById("fan_manual").style.display = "none";
+                                }
+                                else
+                                {
+                                    document.getElementById("id_board_fan_mode").value = 1;
+                                    document.getElementById("manual_fan_level").value = obj.fans_info_all.fan_manual_level;
+
+                                }
+
+                                   $("#FAN_LABLE").text(obj.fans_info_all.current_fan_level)
+
+                            }
+                            
+
+                        }
+                        else
+                            alert("No Reply from server.");
+                    },
+                    error: function(xhr, textStatus, errorThrown)
+                    {
+                        alert("fail")
+                    }
+                });
+            }
+
+    function fan_change(inputValue)
+    {
+        if (inputValue.value == 0)
+        {
+            document.getElementById("fan_manual").style.display = "none";
+        }
+        else
+        {
+            document.getElementById("fan_manual").style.display = "block";
+        }
+    }
+
+        </script>
+
+    </head>
+    <body  align="left" valign="left">
+
+    <style>
+  .container1 {
+    display: flex;
+    align-items: center;
+  }
+  
+  .container1 img {
+    margin-right: 20px;
+  }
+  
+  .container1 span {
+    color: black;
+    font-size: 18px;
+  }
+    </style>
+
+<style>
+    .bottom-border-table{
+        border-collapse: collapse;
+    }
+    .bottom-border-table tr, .bottom-border-table td {
+        border-bottom: 1px solid black;
+        padding: 10px;
+        border-color: #EBEAEA;
+        padding-left: 20px;
+    }
+</style>
+
+    <div class="container1" style="background-color: #C5D0DD;border-radius: 12px;padding: 20px 20px 20px 20px; width: 1140px;">
+    <img src="icons8-error-48.png" alt="alert">
+    <span>Warning: FPGA will be over heated if fan speeds are set too low. Improper fan speed settings void product warranty </span></div>
+    <br><br>
+
+    <table class="fan-table"><tr  ><td class="fan-td1">Fan Speed Status</td></tr></table  >
+    <table  cellpadding="10px" style="background-color: #ffffff; padding-left: 20px; width: 1180px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+     <tr>
+        <td class="Td_Name" style="width:200px;font-size: 20; color: #8C8787">Current level</td> 
+        <td width="90px" align="center" style="color: #8C8787">:</td>         
+        <td class="Td_Value"><b><label style="font-size: 20; color: #8C8787;" id="FAN_LABLE"> </label></b>
+        </td>
+    </tr>
+
+    </table>
+    <br><br>
+    <table class="fan-table"><tr><td class="fan-td1">Fan Speed Settings</td></tr>  </table >
+     <table style="background-color: #ffffff; padding-left: 20px; padding-top: 20px; width: 1180px;">
+    <tr> 
+    <td class="Td_Name" style="width:250px; font-size:20; color: #8C8787;">Fan speed mode</td>
+    </tr>
+
+    <tr> 
+    <td class="Td_Value" style="padding-top: 20px;"> 
+            <select  id="id_board_fan_mode"  class="fan-select" onchange="fan_change(this)">
+                <option value="0" selected="selected">Auto</option>
+                <option value="1">Manual</option>
+            </select>
+
+    </td>
+    </tr>
+    </table>
+
+    <div id="fan_manual" style="display:block; background-color: #ffffff; padding-left: 20px; width: 1160px;">
+
+    <table> 
+    <tr>
+    <td class="Td_Name" style="width:250px; font-size:20; color: #8C8787;">Fan level</td> 
+    </tr>
+    <br>
+    <tr>
+    <td class="Td_Value" style="padding-top:20px;">  
+
+      <select  id="manual_fan_level"  class="fan-select">
+            <option value="1" >Level 1</option>
+            <option value="2" >Level 2</option>
+            <option value="3" >Level 3</option>
+            <option value="4" >Level 4</option>
+            <option value="5" selected >Level 5</option>
+            <option value="6" >Level 6</option>
+            <option value="7" >Level 7</option>
+            <option value="8" >Level 8</option>
+            <option value="9" >Level 9</option>
+            <option value="10" >Level 10</option>
+            </select>
+
+    </td>
+    </tr>
+    </table>
+    </div>
+
+
+<center class="fan-center">
+<input type="button" value="Apply/Save changes"  style="cursor: pointer;" onclick="Apply_Fan_Mode_Speed()">
+</center>
+<br><br>
+
+    
+      <table class="fan-table"><tr   ><td class="fan-td1">Change Fan Curve</td></tr>  <br></table  >
+
+
+
+<table class="bottom-border-table" style="background-color: #ffffff; padding-left: 20px; width: 1180px;">
+    <tr style="font-weight: bold;"> <td style="width: 100px; color: #8C8787;">Fan level</td> <td style="width: 100px; color: #8C8787;" >Capacity</td> <td style="color: #8C8787;"> FPGA Temperature</td></tr>
+    <tr> <td class="fan-td">10</td>          <td class="fan-td"> 100%</td>   <td> <input id="level10"  name="" class="fan-input">  °C  <td></tr>
+     <tr> <td class="fan-td">9</td>          <td class="fan-td"> 90%</td>    <td> <input id="level9"   name="" class="fan-input">  °C  </td></tr>
+    <tr> <td class="fan-td">8</td>          <td class="fan-td"> 80%</td>     <td> <input id="level8"   name="" class="fan-input">  °C  </td></tr>
+    <tr> <td class="fan-td">7</td>          <td class="fan-td"> 70%</td>     <td> <input id="level7"   name="" class="fan-input">  °C  </td></tr>
+    <tr> <td class="fan-td">6</td>          <td class="fan-td"> 60%</td>     <td> <input id="level6"   name="" class="fan-input">  °C  </td></tr>
+    <tr> <td class="fan-td">5</td>          <td class="fan-td"> 50%</td>     <td> <input id="level5"   name="" class="fan-input">  °C  </td></tr>
+    <tr> <td class="fan-td">4</td>          <td class="fan-td"> 40%</td>     <td> <input id="level4"   name="" class="fan-input">  °C  </td></tr>
+    <tr> <td class="fan-td">3</td>          <td class="fan-td"> 30%</td>     <td> <input id="level3"   name="" class="fan-input">  °C  </td></tr>
+    <tr> <td class="fan-td">2</td>          <td class="fan-td"> 20%</td>     <td> <input id="level2"   name="" class="fan-input">  °C  </td></tr>
+    <tr> <td class="fan-td">1</td>          <td class="fan-td"> 10%</td>     <td> <input id="level1"   value="< level2" class="fan-input" disabled>  °C  </td></tr>
+</table>
+
+<center class="fan-center">
+<input type="button" value="Apply/Save Fan Curve"   style="cursor: pointer;" onclick="Apply_Fan_CURVE()">
+</center>
+
+    </body>
+</html>

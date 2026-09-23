@@ -1,0 +1,66 @@
+
+<html xmlns="http://www.w3.org/1999/xhtml" >
+	<head>
+		<title>Miner Logs</title>
+		<script>
+
+		var get_ok = 0;
+		var obj = "";
+		$(function() 
+        {
+               get_ip_address();
+        });
+
+        function get_ip_address()
+            {  
+                $.ajax(
+                {
+                    type: "POST",
+                    url: "/cgi-bin/qcmap_web_cgi.cgi",
+                    data:
+                    {
+                        Page: "getDracaenaIPaddress",
+                    },
+                    dataType: "text",
+                    success: function(msgs)
+                    {   
+
+                        if(msgs.length > 0)
+                        {  
+                             obj = jQuery.parseJSON(msgs);
+                            if (obj.result == "SUCCESS")
+                            {
+                             	var form_newer= "<iframe src=\"http://"+obj.box_ip_address+":9001/?filter=start\" style=\"width: 1140px; height: 900px;\"></iframe>"
+         	                    document.getElementById("myformnew").innerHTML = form_newer;
+
+                            }
+                            else
+                            {
+                            	alert("please reload again");
+                            }
+                            
+
+                        }
+                        else
+                            alert("No Reply from server.");
+                    },
+                    error: function(xhr, textStatus, errorThrown)
+                    {
+                        alert("fail")
+                    }
+                });
+            }
+ 
+		</script>
+
+	</head>
+	<body  align="left" valign="left">
+ 
+        
+         <table><tr   ><td class="h1">Miner logs</td></tr>  </table  ><br>
+         <div id="myformnew"></div>
+
+
+
+	</body>
+</html>

@@ -1,0 +1,240 @@
+<html>
+    <head>
+        <title>Osprey Electronics | E300 Miner</title>    
+        <script type="text/javascript" src="js/jquery.js"></script>
+        <link rel="stylesheet" href="js/jquery-ui.css"/>
+        <script type="text/javascript" src="js/jquery-ui.js"></script> 
+        
+        <link rel="stylesheet" href='N203stylemain.css' type='text/css'>
+       
+        <script type="text/javascript" src="js/N203script.js"></script>
+<!--         <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="0" />
+ -->
+        <meta http-equiv="Cache-Control" content="max-age=0, no-cache, no-store, must-revalidate" />
+        <meta http-equiv="Pragma" content="no-cache" />
+        <meta http-equiv="Expires" content="-1" />
+
+
+        <script>
+            var isClickSystem = 0;
+            var isClickMiner = 0;
+
+            // function loadpage(page)
+            // {   
+            //     $('#Content').load(page); 
+            // }
+
+            function loadpage(page)
+            {   
+                $('#Content').load(page + "?v=" + new Date().getTime()); 
+            }
+
+
+            $(document).ready(function()
+            {   
+                 loadpage('N203login.html'); 
+
+        /*       document.getElementById("div_menu_content").style.display = "block";
+                loadpage('N203dashboard.html')
+                click_submenu(5); show_dashboard()*/
+                
+            });
+
+            function show_logout() {
+
+                  
+                 //localStorage.clear();
+                 sessionStorage.clear()
+                 document.getElementById("div_menu_content").style.display = "none";
+                  loadpage('N203login.html'); 
+                // body...
+            }
+                       
+        </script>
+        <style type="text/css">
+        <!--
+ 
+            .main_content
+            {
+                width : 100%;
+                height : 100%;
+                /*margin-left: -100px !important;*/
+            }
+            .menu_content
+            {
+                width : 240px;
+                height : 100%;
+                overflow:auto;
+            }
+
+
+            img.banner
+            {
+              width: 1140px;
+              height: 80px;
+              margin-top: -2.5px;
+
+            }
+
+
+            html{
+            overflow-y: scroll;
+
+            }
+            html, body {
+            height: 99.9%;
+            max-width: 1400px;
+            background: #FFFFFF;
+            margin: 0px auto;
+            _margin: 0px auto;
+            _width: 1400px;
+            font-family: Arial;
+            font-size:14px;
+            }
+            body {
+            background: linear-gradient(#FFFFFF);
+            background-position:0 126px;
+            }
+            blockquote {
+            display: block;
+            margin-bottom: 1em;
+            margin-left: 20px;
+            margin-right: 10px;
+            font-family: Arial;
+            }
+
+            img.logokatena
+            {
+               /*width: 340px;*/
+                height: 111px;
+                object-fit: cover;
+                /*object-position: 50% 50%;*/
+            }
+            tr.spacemain
+            {
+              height: 15px;
+              background-color: blue;
+
+            }
+
+            .Td_Name {
+            font-size: 1em;
+            height: 22px;
+            }
+
+    </style>
+    </head>
+    <body >
+
+    <table  border="0" width="100%" style="max-width: 1400px; border-spacing: 0;">
+<!--         <tr>
+            <td style="width: 221px; height: 111px; background-color:#ffffff; border-block-color: white;" > <img  style="width: 150; padding-top: 25px; padding-right: 25px;" src="logo.png" border="0"></td>
+            <td id="fpga-info" style="background-color:#EBEAEA; font-size: 30; padding: 60px 0px 20px 0px; color: #8C8787;" >
+            </td>
+        </tr> -->
+
+        <tr style="background-color:#EBEAEA;">
+        <td id = "Table_Menu" style="vertical-align: top; width: 260px; height: 1400px;">
+            <div id = "div_menu_content" class = "menu_content" style="width:260px;">
+                <table><tbody><tr><td style="border-block-color: white;"> <img style="height: 100; padding-left: 75px;" src="O-white@300x.png" border="0"></td></tr></tbody></table>
+            <ul> 
+                <ul   id = "ul5" style="display: block;"  >
+
+                <li class="border-submenulink" id="a_dash_board_1"><a  id="a_dash_board" class="submenuLink" style="font-size: 15px" href="#"  onclick="loadpage('N203dashboard.html'); click_submenu(5); show_dashboard()"> Mining Board Status/Settings</a>
+               </li>  <li class="spaceCell"></li>  
+
+
+                <li class="border-submenulink" id="a_fan_1"><a id="a_fan" class="submenuLink" style="font-size: 15px" href="#" onclick=" loadpage('202fans.html');click_submenu(81);  "  >  Fans Speed Settings</a>
+                    </li>
+                <li class="spaceCell"></li>
+
+              <li class="border-submenulink" id="a_eth_miner_1"><a  id="a_eth_miner" class="submenuLink" style="font-size: 15px" href="#"  onclick="loadpage('N208RC4ethminer.html'); click_submenu(6);"  > Miner <img id="minerup"  style="padding-left: 155px; margin-top:-14px; display: inline;" src="image/right2.png" border="0"> <img id="minerdown"  style=" padding-left: 155px; margin-top:-14px; display: none;" src="image/down2.png" border="0"></a>
+               </li>  <li class="spaceCell"></li>  
+
+               <div style="display: none; padding-left: 20px;" id="id_log">
+            <li class="border-smallmenuLink" id="miner_config_1"><a id="miner_config" style="font-size: 15px; font-weight: normal;" href="#" onclick="loadpage('N208RC4ethminer.html'); click_submenu(61);" class="smallmenuLink">Miner Configuration</a></li>
+                <li class="spaceCell"></li> 
+
+              <li class="border-smallmenuLink" id="a_streaming_log_1"><a  id="a_streaming_log" class="smallmenuLink" style="font-size: 15px" href="#"  onclick="loadpage('log.html'); click_submenu(7);"  > Miner Logs</a>
+               </li>  <li class="spaceCell"></li>  
+              </div>
+
+        
+
+                <li class="border-submenulink" id="a_upfirm_1"> <a  id="a_upfirm" class="submenuLink" style="font-size: 15px" href="#" onclick="loadpage('N206upfirmware.html');click_submenu(3);  "  > Firmware/Algorithms</a>
+                </li>
+                
+                <li class="spaceCell"></li> 
+
+                <li class="border-submenulink" id="a_advance_1"><a  id="a_advance" class="submenuLink" style="font-size: 15px" href="#"  onclick=" loadpage('N206ipsetting.html');click_submenu(8);  " > System Settings
+                <img id="advancesup"  style="padding-left: 80px; margin-top:-14px; display: inline;" src="image/right2.png" border="0"> <img id="advancesdown"  style=" padding-left: 80px; margin-top:-14px; display: none;" src="image/down2.png" border="0"> </a>
+               
+
+                </li>  <li class="spaceCell"></li> 
+
+                <div id="sub3" style="display:none; padding-left: 20px;">
+                    
+                <li class="border-smallmenuLink" id="a_ip_setting_1"><a id="a_ip_setting" class="smallmenuLink" style="font-size: 15px" href="#" onclick="loadpage('N206ipsetting.html');click_submenu(83);  " >Network Settings </a></li>
+                <li class="spaceCell"></li> 
+
+              
+                <li class="border-smallmenuLink" id="a_noti_1"><a id="a_noti" class="smallmenuLink" style="font-size: 15px" href="#" onclick=" loadpage('202notifications.html'); click_submenu(82);  " >  Notification Settings</a>
+                 </li> 
+               
+                  <li class="spaceCell"></li> 
+
+                <li class="border-smallmenuLink" id="a_password_1"> <a  id="a_password" class="smallmenuLink" style="font-size: 15px" href="#" onclick="loadpage('202password.html');click_submenu(84);  "  >Password</a>
+                </li>  
+               <li class="spaceCell"></li> 
+
+               <li class="border-smallmenuLink" id="a_miner_setting_1"><a  id="a_miner_setting" class="smallmenuLink" style="font-size: 15px" href="#"  onclick=" loadpage('minersetting.html');click_submenu(1);"> Reset</a>
+                </li>  <li class="spaceCell"></li>  
+                 
+
+                 </div> 
+
+                <li class="border-submenulink" id="a_center_management_1"><a  id="a_center_management" class="submenuLink" style="font-size: 15px" href="#"  onclick="loadpage('N206centermanagement.html');click_submenu(10);"> Center Management Settings</a>
+                </li>  <li class="spaceCell"></li> 
+
+                <li class="border-submenulink" id="a_dignostic_1"><a  id="a_dignostic" class="submenuLink" style="font-size: 15px" href="#"  onclick="loadpage('N2028RC4diagnostic.html');click_submenu(9);"> Diagnostic</a>
+                </li>  <li class="spaceCell"></li>  
+
+
+
+                <li class="border-submenulink" id="a_log_out_1"><a  id="a_log_out" class="submenuLink" style="font-size: 15px;" href="#"  onclick="show_logout()"> Sign Out</a>
+                </li>  <li class="spaceCell"></li>  
+
+
+
+                </ul>
+            </ul>
+            </div>
+        </td>
+
+        <td id = "Table_Content" style="vertical-align: text-bottom; background-color: #EBEAEA; height: 1140px;" >
+
+                <div id = "Content" class = "main_content" style="padding-left: 30px; padding-right: 30px; padding-bottom: 250px; padding-top: 25px;">
+
+            </div>
+
+            <div class="main-right pop-outer" id="pop-background" style="display:none;">
+                <fieldset class="pop-inner" id="cbi-apply-dropbear" style="display: none;">
+
+                <br>
+                 
+                <span id="cbi-apply-dropbear-status">Please waiting a moment...</span>
+                </fieldset>
+                <div class="lds-roller"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+                <span style="color: #fff; margin-left: -140px; font-size: 15px">Please waiting a moment...</span> 
+            </div>
+        </td>
+        </tr>   
+
+    </table>
+    </body>
+    <footer>
+    </footer>
+    </html>
+

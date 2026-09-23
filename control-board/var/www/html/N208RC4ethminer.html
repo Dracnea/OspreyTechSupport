@@ -1,0 +1,832 @@
+
+<html xmlns="http://www.w3.org/1999/xhtml" >
+    <head>
+        <title>Miner Setting</title>
+
+        <script>
+
+            var miner_status_old = 0;
+            var obj = "";
+            var libraryData = "";
+
+            $(document).ready(function () { 
+                $.getJSON("libraries.json?v=" + new Date().getTime(), function(data) 
+                {
+                    libraryData = data.dev_fees;
+                    console.log(libraryData);
+
+                    populateLibrarySelect(data.dev_fees);
+                    $("#library").change(function() {
+                        populateAlgoSelect(data.dev_fees, $(this).val());
+                    });
+
+                    getConfig();
+
+                    generateDevFeeTable(data);
+                });
+
+            });
+
+
+            function setDefaultAlgo() {
+                if (!libraryData) {
+                    console.error("ibraryData chưa được tải, không thể đặt algo mặc định.");
+                    return;
+                }
+
+                let firstLibrary = Object.keys(libraryData)[0];
+                let firstAlgo = Object.keys(libraryData[firstLibrary])[0];
+
+                if (firstLibrary && firstAlgo) {
+                    $("#library").val(firstLibrary).trigger("change");
+                    populateAlgoSelect(libraryData, firstLibrary, function() {
+                        $("#algo").val(firstAlgo).trigger("change");
+                    });
+                    console.log("Đặt algo mặc định:", firstAlgo, "của", firstLibrary);
+                } else {
+                    console.error("Không tìm thấy algo mặc định.");
+                }
+            }
+
+          function generateDevFeeTable(data) {
+                let devFees = data.dev_fees;
+                
+
+                let tableHTML = `<table style='background-color: #ffffff; padding-left: 20px; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; width: 1160px; padding-top: 20px'>
+                                    <thead>
+                                        <tr  >
+                                            <th style='padding: 8px; text-align: left;'>Coin</th>
+                                            <th style='padding: 8px; text-align: left;'>Developers</th>
+                                            <th style='padding: 8px; text-align: left;'>Dev Fee (%)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>`;
+
+                $.each(devFees, function (group, coins) {
+                    $.each(coins, function (coin, details) {
+                        let developers = details.developers.length > 0 ? details.developers.join(", ") : "Unknown";
+                        let fee = details.fee;
+
+                        tableHTML += `
+                            <tr style='border-bottom: 1px solid #ddd;'>
+                                <td style='padding: 8px;'>${coin}</td>
+                                <td style='padding: 8px;'>${developers}</td>
+                                <td style='padding: 8px;'>${fee}%</td>
+                            </tr>`;
+                    });
+                });
+
+                tableHTML += "</tbody></table>";
+                $("#dev_fee_table").html(tableHTML); // Cập nhật bảng dev fee trên trang
+            }
+
+
+               function populateLibrarySelect(data) {
+                let librarySelect = $("#library");
+                librarySelect.empty();
+                $.each(data, function(library, algos) {
+                    let displayName = algos[Object.keys(algos)[0]].developers[0] || library.toUpperCase();
+                    librarySelect.append(new Option(displayName, library));
+                });
+                librarySelect.trigger("change");
+            }
+
+
+            // function populateAlgoSelect(data, selectedLibrary) {
+            //     let algoSelect = $("#algo");
+            //     algoSelect.empty();
+            //     $.each(data[selectedLibrary], function(algo, details) {
+            //         let optionText = `${algo}`;
+            //         algoSelect.append(new Option(optionText, algo));
+            //     });
+            // }
+
+            function populateAlgoSelect(data, selectedLibrary, callback) {
+            console.log("populateAlgoSelect() chạy với library:", selectedLibrary);
+
+            let algoSelect = $("#algo");
+            algoSelect.empty();
+
+            if (!data[selectedLibrary]) {
+                console.log("hông tìm thấy algo cho library này:", selectedLibrary);
+                return;
+            }
+
+            $.each(data[selectedLibrary], function(algo, details) {
+                let optionText = `${algo}`;
+                algoSelect.append(new Option(optionText, algo));
+            });
+
+            console.log("✅opulateAlgoSelect() đã thêm algo:", $("#algo").html());
+
+            if (callback) {
+                console.log("✅Gọi callback sau khi populate xong");
+                callback();
+            }
+        }
+
+
+
+            function show_method(input)
+            {   if (input.value == 1)
+                {
+                    //document.getElementById("div_auto").style.display = "block";
+                    document.getElementById("div_manual").style.display = "none";
+                }
+                else
+                {
+                    //document.getElementById("div_auto").style.display = "none";
+                    document.getElementById("div_manual").style.display = "block";                    
+                }
+            }
+
+            function ApplyConfig()
+            {   
+                //miner_status_old = 0 : already ruuning
+                //miner_status_old = 1  : already stopped
+
+                if (!libraryData) 
+                {
+                    alert("Library data is not loaded yet.");
+                    return;
+                }
+                let library = $("#library").val();
+                let algo = $("#algo").val();
+                let algoDetails = libraryData[library]?.[algo];
+                
+                if (!algoDetails)
+                 {
+                    alert("Invalid Algorithm for selected Developer");
+                    return;
+                }
+                document.getElementById("pop-background").style.display = "block";
+
+                console.log("fuckkkkkkkkkkkkkkk");
+
+                $.ajax(
+                {
+                    type: "POST",
+                    url: "/cgi-bin/qcmap_web_cgi.cgi",
+                    data:
+                    {
+                        Page: "setDracaenaMiner",
+                        status:        miner_status_old ,
+                        info_a:        document.getElementById("library").value,
+                        info_o:        document.getElementById("pool").value,
+                        info_u:        document.getElementById("wallet").value,
+                        info_miner:        document.getElementById("workerid").value, 
+                        info_fpga_clk_core:        document.getElementById("clock_core").value,
+                        info_fpga_clk_core1:        document.getElementById("clock_core1").value,
+                        info_fpga_clk_core2:        document.getElementById("clock_core2").value,
+                        info_fpga_clk_mem:        document.getElementById("clock_hbm").value,
+                        info_fpga_clk_mem1:        document.getElementById("clock_hbm1").value,
+                        info_fpga_clk_mem2:        document.getElementById("clock_hbm2").value,
+                        auto_start: document.getElementById("auto_start").value,
+                        running_mode: document.getElementById("running_mode").value,
+                        input_in_oneline: document.getElementById("input_in_oneline").value,
+                        input_in_oneline1: document.getElementById("input_in_oneline1").value,
+                        input_algo:  document.getElementById("algo").value,
+                        privatekey: document.getElementById("privatekey").value,
+                        token:  "1",
+
+                        info_o1:                    document.getElementById("pool_1").value,
+                        info_u1:                    document.getElementById("wallet_1").value,
+                        info_miner1:                document.getElementById("workerid_1").value,
+                        info_fpga_clk_core3:        document.getElementById("clock_core3").value,
+                        info_fpga_clk_core4:        document.getElementById("clock_core4").value,
+                        info_fpga_clk_core5:        document.getElementById("clock_core5").value,
+                    },
+                    dataType: "text",
+                    success: function(msgs)
+                    {
+                        if(msgs.length > 0)
+                        {
+                            
+                            document.getElementById("div_stop").style.display = "none";
+                            document.getElementById("div_start").style.display = "none"; 
+
+                            window.setTimeout( function()
+                            {
+                                 document.getElementById("pop-background").style.display = "none";
+                                loadpage('N208RC4ethminer.html');
+                            }, 2000);
+                             
+                        }
+                        else
+                        {
+                            alert("No Reply from server.");
+                            document.getElementById("pop-background").style.display = "none";
+                        }
+                    },
+                    error: function(xhr, textStatus, errorThrown)
+                    {
+                        alert("fail")
+                    }
+                });
+            }
+
+
+            function getConfig()
+            {  
+                $.ajax(
+                {
+                    type: "POST",
+                    url: "/cgi-bin/qcmap_web_cgi.cgi",
+                    data:
+                    {
+                        Page: "getDracaMinerStatus",
+                    },
+                    dataType: "text",
+                    success: function(msgs)
+                    {   
+
+                        if(msgs.length > 0)
+                        {  
+                            obj = jQuery.parseJSON(msgs);
+                            if (obj.result == "SUCCESS")
+                            {
+                                  //  document.getElementById("status").value = obj.status;
+
+                                console.log("Developer 00000000000:", obj.developer);
+
+
+                                populateAlgoSelect(libraryData, obj.developer, function() {
+                                setTimeout(function() {
+                                        if (obj.info.a) {
+                                            $("#algo").val(obj.info.a).trigger("change");
+                                            $("#library").val(obj.developer).trigger("change");
+                                             console.log("án algo:", obj.info.a);
+
+                                        } else {
+                                            console.log("hông có giá trị algo trong obj.info");
+                                        }
+                                    }, 200); // Đợi 200ms để danh sách hoàn thành
+                                });
+
+     
+                                let statusText = "Stopped";
+                                if (obj.status !== "0" && obj.info.a && obj.developer) {
+                                    statusText = `Running ${obj.info.a} of ${obj.developer} bitstream`;
+                                }
+                                $("#status_miner").text(statusText);
+                                miner_status_old = obj.status === "0" ? 1 : 0;
+
+                                if (obj.status !== "0") {
+                                    document.getElementById("div_stop").style.display = "block";
+                                    document.getElementById("div_start").style.display = "none"; 
+                                } else {
+                                    $("#status_miner2").text("Stopped");
+                                    document.getElementById("div_start").style.display = "block"; 
+                                    document.getElementById("div_stop").style.display = "none";
+                                }
+
+                                if (statusText === "Stopped") 
+                                {
+                                    $("#status_miner2").css("color", "red");  // Màu đỏ khi "Stopped"
+                                } 
+                                else 
+                                {
+                                    $("#status_miner2").css("color", "green");  // Màu xanh khi khác "Stopped"
+                                }
+
+
+                                if (statusText === "Stopped") 
+                                {
+                                    $("#status_miner").css("color", "red");  // Màu đỏ khi "Stopped"
+                                } 
+                                else 
+                                {
+                                    $("#status_miner").css("color", "green");  // Màu xanh khi khác "Stopped"
+                                }
+
+                                document.getElementById("library").value = obj.developer;
+                                document.getElementById("algo").value = obj.info.a;
+                                document.getElementById("pool").value = obj.info.o || "";
+                                document.getElementById("wallet").value = obj.info.u || "";
+                                document.getElementById("workerid").value = obj.info.miner || "";
+                                document.getElementById("clock_core").value = obj.info.fpga_clk_core || "";
+                                document.getElementById("clock_core1").value = obj.info.fpga_clk_core1 || "";
+                                document.getElementById("clock_core2").value = obj.info.fpga_clk_core2 || "";
+                                document.getElementById("clock_hbm").value = obj.info.fpga_clk_mem || "";
+                                document.getElementById("clock_hbm1").value = obj.info.fpga_clk_mem1 || "";
+                                document.getElementById("clock_hbm2").value = obj.info.fpga_clk_mem2 || "";
+                                document.getElementById("auto_start").value = obj.enabled || "0";
+                                document.getElementById("running_mode").value = obj.info.running_mode || "0";
+
+                                document.getElementById("pool_1").value = obj.info.o1 || "";
+                                document.getElementById("wallet_1").value = obj.info.u1 || "";
+                                document.getElementById("workerid_1").value = obj.info.miner1 || "";
+                                document.getElementById("clock_core3").value = obj.info.fpga_clk_core3 || "";
+                                document.getElementById("clock_core4").value = obj.info.fpga_clk_core4 || "";
+                                document.getElementById("clock_core5").value = obj.info.fpga_clk_core5 || ""; 
+                                
+                                if (obj.info.privatekey) {
+                                    document.getElementById("privatekey").value = obj.info.privatekey;
+                                }
+
+                            }
+                            else
+                            {
+                               setDefaultAlgo();                            
+                            }
+                            
+
+                        }
+                        else
+                        {
+                            alert("No Reply from server.");
+                            setDefaultAlgo();
+
+                        }
+                    },
+                    error: function(xhr, textStatus, errorThrown)
+                    {
+                        alert("fail");
+                         setDefaultAlgo();
+
+                    }
+                });
+            }
+            
+            function hasWhiteSpace(s) {
+              return /\s/g.test(s);
+            }
+
+            function change_running_mode ()
+            {
+                console("to do");
+            }
+
+
+            function check_input(inputText,name)
+            {
+                //name == 1 : check ssid
+                //name == 2: check password
+
+                  
+                if(name == 1)
+                {   
+
+                    if(inputText.value.length < 2 || inputText.value.length > 20)
+                    {
+                        alert("Input length  must be between 2 and 20");
+                        inputText.value =  obj.info.miner;
+                        return;
+                    }
+
+                    if (hasWhiteSpace(inputText.value)) 
+                        {
+                            alert('String contains whitespace (ie. spaces, tabs or line breaks)');
+                            inputText.value = obj.info.miner;
+                            return ;
+                        }
+                }
+                else if (name == 3)
+                {
+                                 if (hasWhiteSpace(inputText.value)) 
+                        {
+                            alert('String contains whitespace (ie. spaces, tabs or line breaks)');
+                            inputText.value = obj.info.u;
+                            return ;
+                        }
+                }
+
+                else if(name == 2)
+                {
+                         if (hasWhiteSpace(inputText.value)) 
+                        {
+                            alert('String contains whitespace (ie. spaces, tabs or line breaks)');
+                            inputText.value = obj.info.o;
+                            return ;
+                        }                    
+                }
+                // else if(name == 2)
+                // {
+                //     if(inputText.value.length < 8 || inputText.value.length > 63)
+                //     {
+                //         alert("Input length  must be between 8 and 63");
+                //         inputText.value = "";
+                //         return;
+                //     }
+                // }
+                // var re =  /(&|"|'|\\)/g;
+                // var re1 = /[^\u0000-\u00bf,\u00d7,\u00f7]/g;
+                // if(inputText.value.match(re) || inputText.value.match(re1) )
+                // {
+                //     alert("Found an invalid character !");
+                //     inputText.value = "";
+                //     //document.form1.text1.focus();
+                //     return false;
+                // }
+
+             
+
+                //validate case if all is space
+                return true;             
+            }
+
+
+
+            function changeAlgo(inputText) {
+                if (!libraryData) return;
+                let selectedAlgo = inputText.value;
+                let library = $("#library").val();
+                let algoDetails = libraryData[library]?.[selectedAlgo];
+                
+                if (!algoDetails) return;
+                if (algoDetails.dual===1) {
+                   $("#div_fgpa_hbm_clock").show();
+                   $("#clock_core3").show();
+                   $("#clock_core4").show();
+                   $("#clock_core5").show();
+                   $("#pool_1").show();
+                   $("#wallet_1").show();
+                   $("#workerid_1").show();
+                   $("#Fish").show();
+                   $("#Fish_1").show();
+                   $("#Fish_2").show();
+                   $("#Fish_3").show();
+                   $("#Tari").show();
+                   $("#Tari_1").show();
+                   $("#Tari_2").show();
+                   $("#Tari_3").show();
+                } else {
+                   $("#div_fgpa_hbm_clock").hide();
+                   $("#clock_core3").hide();
+                   $("#clock_core4").hide();
+                   $("#clock_core5").hide();
+                   $("#pool_1").hide();
+                   $("#wallet_1").hide();
+                   $("#workerid_1").hide();
+                   $("#Fish").hide();
+                   $("#Fish_1").hide();
+                   $("#Fish_2").hide();
+                   $("#Fish_3").hide();
+                   $("#Tari").hide();
+                   $("#Tari_1").hide();
+                   $("#Tari_2").hide();
+                   $("#Tari_3").hide();
+                }
+                if (algoDetails.useHBM === 1) {
+                    $("#div_fgpa_hbm_clock").show();
+                    $("#p_p_1").show();
+                    
+                } else {
+                    $("#div_fgpa_hbm_clock").hide();
+                    $("#p_p_1").hide();
+             
+                }
+                
+                if (algoDetails.useKey === 1) {
+                    $("#div_private_key").show();
+                } else {
+                    $("#div_private_key").hide();
+                }
+                console("changeeeeeeeeeeeeeee1111111111111111111");
+            }
+
+            function checkNewLine(inputElement) {
+          // var textarea = document.getElementById(textareaId);
+            inputElement.value = inputElement.value.replace(/[\n\r]/g, '');
+
+            // Hiển thị thông báo alert sau khi gán giá trị mới
+            alert("New line characters have been removed.");
+        }
+        </script>
+
+        <script type="text/css">
+        mark {
+            color: #green;
+            }
+        </script>
+
+
+
+    </head>
+
+    <style>
+      .bordered-container {
+        border-radius: 12px;
+        display: inline-block;
+        padding: 5px;
+        margin-top: 100px;
+        margin-bottom: 100px;
+        background-color: #CDD8E5;
+        padding: 20px 20px 0px 20px;
+        }
+        .container2 {
+        display: flex;
+        align-items: center;
+        background-color: #C5D0DD;
+        border-radius: 12px;
+        padding: 20px 20px 20px 20px; 
+        width: 1080px;
+        }
+      
+        .container2 img {
+        margin-right: 20px;
+        }
+      
+        .container2 span {
+        color: black;
+        font-size: 18px;
+        font-weight: lighter;
+        }
+    </style>
+
+
+    <body  align="left" valign="left">
+ 
+        
+    <table style="background-color: #ffffff; padding-left: 20px; border-top-left-radius: 12px; border-top-right-radius: 12px; width: 1160px; padding-top: 20px"><tr><td style="font-size: 30;color: #8C8787;font-weight: bold;">Miner configuration</td></tr>  </table  >
+    
+
+        <div style="display:flex; background-color: #ffffff; padding-left: 20px; width: 1140px; padding-top: 20px;"> 
+<table width="450px;" cellpadding="10px">
+
+
+            <tbody><tr>
+            <td class="ethminer-Td_Name2" >Developer</td> 
+</tr>
+
+<tr>
+  <td class="Td_Value">
+            <select id="library" class="miner-select" >
+            </select>
+            </td>
+            </tr>
+
+            <tr>
+            <td class="ethminer-Td_Name2" >Configuration method</td> 
+                       
+</tr>
+
+<tr>
+<td class="Td_Value"> 
+            <select id="running_mode" class="miner-select" onchange="change_running_mode(this)">
+            <option value="0" selected>Menu</option>
+            <option value="1" disabled >Command line</option>
+            </select>
+            </td>
+            </tr>
+
+            <tr>
+            <td class="ethminer-Td_Name2" >Auto start</td> 
+</tr>
+
+<tr>
+            <td class="Td_Value">
+            <select id="auto_start" class="miner-select">
+            <option value="1" selected="">Enable</option>
+               <option value="0">Disable </option>
+            </select>
+            </td>
+            </tr>
+
+
+        </tbody></table>
+  <div style="width:80px;"></div>
+
+
+<table>
+<tbody><tr class="bordered-container" style="height: 50px">
+            <td class="Td_Name" style="width:100px; font-size: 16; font-weight: bold; color: #0066b2;">Miner status </td> 
+            <td width="20px" align="center" style="font-size: 16; font-weight: bold; color: #0066b2;">:</td>           
+            <td class="Td_Value ">
+              <label style="font-size: 20; color: green;" id="status_miner"> <label style="font-size: 20; color: red;" id="status_miner2">stopped</label></label></td>
+            </tr>
+</tbody></table>
+</div>
+
+        
+        <div id="div_command_line" style="display:none; background-color: #ffffff; padding: 20px 20px 20px 20px; width: 1120px;">
+
+        <div id="div_command_line_etceth" style="display: block;"> 
+
+
+
+
+
+
+
+    <div class="container2">
+    <img src="icons8-error-48.png" alt="alert"> <span>There is risk of damaging FPGAs card if HBM is over clocked (above 900M). Please take your own risk and Osprey Electronics won't provide warranty to overclocked E300. </span></div><br>
+
+            <table cellpadding="10px">
+         
+                <textarea id="input_in_oneline"  onchange="checkNewLine(this)" style="width:1120px;  height:55px"  > </textarea>
+         
+            </table>
+            <br>
+       </div>
+
+
+        <div style="display: none;"> 
+
+
+
+
+            <table cellpadding="10px">
+         
+                <textarea id="input_in_oneline1"  onchange="checkNewLine(this)" style="width:1120px;  height:55px"  > </textarea>
+         
+            </table>
+            <br>
+       </div>
+
+        </div>
+
+
+        <div id="div_one_by_one" style="display:block; background-color: #ffffff; padding-left: 20px; border-bottom-right-radius: 12px; border-bottom-left-radius: 12px; padding-bottom: 30px; width: 1140px;">
+
+         <table cellpadding="10px"> 
+            <tr>
+            <td class="ethminer-Td_Name2"  >Algo</td>
+            </tr>
+            <tr> 
+            <td class="Td_Value" >
+            <select  id="algo" class="miner-select"  onchange="changeAlgo(this)" > 
+            </select>
+            </td>
+            </tr>
+
+            <tr>  
+            <td class="ethminer-Td_Name1" style="font-size: 20;"> <p style="display:inline-block;margin: 0;padding-bottom: 10px;">Pool</p><p style="display:none;display:inline-block;margin: 0;" id="Fish">-Fishhash</p><p style="display:none;margin: 0;padding-top: 10px;" id="Tari">Pool-Tari</p></td> 
+            <td class="ethminer-:">:</td>         
+            <td class="Td_Value">
+            
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+            <input id="pool" class="miner-input" value="poolfish"  onchange="check_input(this,2)"style="width:650px; height:40px; border-radius:6px; border:1px solid #B5B1B1;color: #8C8787;">
+            <input id="pool_1" value="pooltari"  style="display:block; width:650px; height:40px; border-radius:6px; border:1px solid #B5B1B1;color: #8C8787;">
+            </div>
+            </td>
+            </tr>
+
+            <tr>  
+            <td class="ethminer-Td_Name3" style="font-size: 20;"> <p style="display:inline-block;margin: 0;padding-bottom: 10px;">Wallet</p><p style="display:none;display:inline-block;margin: 0;" id="Fish_1">-Fishhash</p><p style="display:none;margin: 0;padding-top: 10px;" id="Tari_1">Wallet-Tari</p></td> 
+            <td class="ethminer-:">:</td>         
+            <td class="Td_Value">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+            <input id="wallet" class="miner-input" value="walletfish"  onchange="check_input(this,3)" style="width:650px; height:40px; border-radius:6px; border:1px solid #B5B1B1;color: #8C8787;">
+            <input id="wallet_1" value="wallettari"  style="display:block; width:650px; height:40px; border-radius:6px; border:1px solid #B5B1B1;color: #8C8787;">
+            </div>
+            </td>
+            </tr>
+
+            <tr>  
+            <td class="ethminer-Td_Name3"style="font-size: 20;"> <p style="display:inline-block;margin: 0;">WorkID</p><p style="display:none;display:inline-block;margin: 0;" id="Fish_2">-Fishhash</p></p><p style="display:none;margin: 0;" id="Tari_2">WorkerID-Tari</p></td> 
+            <td class="ethminer-:">:</td>         
+            <td class="Td_Value">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+            <input id="workerid" class="miner-input" value="workfish"  onchange="check_input(this,1)" style="width:650px; height:40px; border-radius:6px; border:1px solid #B5B1B1;color: #8C8787;">
+            <input id="workerid_1" value="worktari"  style="display:block; width:650px; height:40px; border-radius:6px; border:1px solid #B5B1B1;color: #8C8787;">
+            </div>
+            </td>
+            </tr>
+
+        </table>
+        
+        <div id="fpga_clock_section" style="text-align: center; margin-top: 20px;">
+
+  <!-- ===== FPGA Core Clock ===== -->
+  <table cellpadding="10px" style="width:100%; text-align:left;">
+    <tr>
+      <td class="ethminer-Td_Name1" style="font-size: 20;"><p style="display:inline-block;margin: 0;padding-top: 35px;">FPGA core clock<p style="display:none;display:inline-block;margin: 0;padding-left: 6px;" id="Fish_3">Fishhash</p></p><p style="display:none;margin: 0;" id="Tari_3">FPGA core clock Tari</p></td>
+      <td class="ethminer-:" style="padding-top: 30px;">:</td>
+      <td class="Td_Value" style="padding-right: 400px;vertical-align: middle;">
+
+        <div style="
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            justify-items: center;
+            align-items: center;
+            text-align: center;
+            max-width: 500px;
+            margin: 0 auto;">
+
+          <!-- Hàng tiêu đề FPGA -->
+          <div>FPGA0</div>
+          <div>FPGA1</div>
+          <div>FPGA2</div>
+
+          <!-- Hàng input core clock -->
+          <input id="clock_core" value="400"
+            class="miner-input-text"
+            style="width:120px;height:40px;border-radius:6px;
+                   border:1px solid #B5B1B1;color:#8C8787;text-align:center;">
+
+          <input id="clock_core1" value="400"
+            class="miner-input-text"
+            style="width:120px;height:40px;border-radius:6px;
+                   border:1px solid #B5B1B1;color:#8C8787;text-align:center;">
+
+          <input id="clock_core2" value="400"
+            class="miner-input-text"
+            style="width:120px;height:40px;border-radius:6px;
+                   border:1px solid #B5B1B1;color:#8C8787;text-align:center;">
+
+          <!-- Hàng input hbm clock -->
+          <input id="clock_core3" value="500"
+            style="width:120px;height:40px;border-radius:6px;
+                   border:1px solid #B5B1B1;color:#8C8787;text-align:center;margin-top:0px;">
+
+          <input id="clock_core4" value="500"
+            style="width:120px;height:40px;border-radius:6px;
+                   border:1px solid #B5B1B1;color:#8C8787;text-align:center;margin-top:0px;">
+
+          <input id="clock_core5" value="500"
+            style="width:120px;height:40px;border-radius:6px;
+                   border:1px solid #B5B1B1;color:#8C8787;text-align:center;margin-top:0px;">
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- ===== FPGA AXI Clock ===== -->
+  <div id="div_fgpa_hbm_clock" style="display:block; margin-top: 10px;">
+    <table cellpadding="10px" style="width:100%; text-align:center;">
+      <tr>
+        <td class="ethminer-Td_Name1" style="padding-right: 10px;text-align:left;font-size: 20;">FPGA axi clock</td>
+        <td class="ethminer-:">:</td>
+        <td class="Td_Value" style="padding-right: 400px;vertical-align: middle;">
+
+          <div style="
+              display: grid;
+              /* grid-template-columns: repeat(3, 1fr); */
+              grid-template-columns: auto auto auto;
+
+              gap: 0px;
+              justify-items: center;
+              align-items: center;
+              text-align: center;
+              max-width: 500px;
+              margin: 0 auto;">
+              
+            <input id="clock_hbm" value="500"
+              class="miner-input-text"
+              style="width:120px;height:40px;border-radius:6px;
+                     border:1px solid #B5B1B1;color:#8C8787;text-align:center;">
+
+            <input id="clock_hbm1" value="500"
+              class="miner-input-text"
+              style="width:120px;height:40px;border-radius:6px;
+                     border:1px solid #B5B1B1;color:#8C8787;text-align:center;">
+
+            <input id="clock_hbm2" value="500"
+              class="miner-input-text"
+              style="width:120px;height:40px;border-radius:6px;
+                     border:1px solid #B5B1B1;color:#8C8787;text-align:center;">
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+    
+        <div style="display: flex;" >
+            <p style="color:  #0066B2;margin: 0;">core clock range 400-600 MHz</p>
+            <p id="p_p_1" style="color:  #0066B2;margin: 0;display: none;">, axi clock range 200-800 MHz</p>
+        </div>
+       </div>
+        <br>
+
+        <div id="div_private_key" style="display:none;"> 
+        <table cellpadding="10px">
+        <p style="color: #0066B2"> License Key  </p>
+            <tr>  
+            <td class="Td_Name" style="width:300px;"> Key </td> 
+            <td class="ethminer-:">:</td>         
+            <td class="Td_Value">
+             <input id="privatekey" type="text" class="miner-input-text" style="width:500px;"> 
+            </td>
+            </tr>      
+        </table>
+        </div>
+
+</div>
+    <br><br>
+
+    <div id="div_stop" style="display:none"> 
+        <center>
+            <input type="button" value="STOP" style="cursor: pointer;" onclick="ApplyConfig()">
+        </center>
+    </div>
+
+    <div id="div_start" style="display:block;"> 
+        <center>
+            <input type="button" value="START" style="cursor: pointer;" onclick="ApplyConfig()">
+        </center>
+    </div>
+
+
+
+        </div>
+   <br><br>
+       <table style="background-color: #ffffff; padding-left: 20px; border-top-left-radius: 12px; border-top-right-radius: 12px; width: 1160px; padding-top: 20px"><tr><td style="font-size: 30;color: #8C8787;font-weight: bold;">Dev fee information</td></tr>  </table  >
+        <div id="dev_fee_table"></div>
+        <br><br>
+
+    </body>
+</html>

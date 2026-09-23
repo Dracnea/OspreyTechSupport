@@ -1,0 +1,375 @@
+<html xmlns="http://www.w3.org/1999/xhtml" >
+	<head>
+		<title>IP Setting</title>
+
+		<script>
+
+		$(function() 
+        {
+               get_network_info();
+        });
+
+	    function ValidateIPaddress(inputText)
+	    {	
+	    	if (inputText.value.length == 0)
+	    	{
+	    		return true;
+	    	}
+
+	        var ipformat = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+	        var tokens = inputText.value.split(".");
+
+	        if(inputText.value.match(ipformat) || inputText.value.length == 0)
+	        {
+	            if(isNaN(tokens[0]) || isNaN(tokens[1]) || isNaN(tokens[2]) || isNaN(tokens[3]))
+	            {   
+	                inputText.value = "";
+	                alert("Invalid IP");                     
+	                return;
+	            }
+	            return true;
+	        }
+
+	        alert("You have entered an invalid address!");
+	        inputText.value = "";
+	        return false;
+	    }
+
+	    function set_network() 
+        {
+
+        if (document.getElementById("input_protocol").value == 1)
+        {
+        	if (document.getElementById("input_ipaddress").value.length < 5)
+        	{
+        		alert ("Please enter valid IP address");
+        		return;
+        	}
+        	else if (document.getElementById("input_subnet").value.length < 5)
+        	{
+        		alert ("Please enter valid subnet mask address");
+        		return;
+        	}
+        	else if (document.getElementById("input_gateway").value.length < 5)
+        	{
+         		alert ("Please enter valid gateway address");
+        		return;       		
+        	}
+        	else if (document.getElementById("input_dns").value.length < 5)
+        	{
+        		document.getElementById("input_dns").value = document.getElementById("input_gateway").value;
+        	}
+        }
+
+			if(!confirm("Your box wil be rebooted after changing network, do you want to apply?"))
+			{	
+				loadpage("N206ipsetting.html");
+				return;
+			}
+			
+
+
+        $.ajax(
+        {
+            type: "POST",
+            url: "/cgi-bin/qcmap_web_cgi.cgi",
+            data:
+            {
+                Page: "setDracaenaNetwork",
+                dhcp_mode:document.getElementById("input_protocol").value,
+                ipaddress:document.getElementById("input_ipaddress").value,
+                subnet:document.getElementById("input_subnet").value,
+                gateway:document.getElementById("input_gateway").value ,
+                dns:document.getElementById("input_dns").value ,
+                token:0,
+            },
+            dataType: "text",
+            success: function(msgs)
+            {   
+            	 loadpage("N2030index.html");
+                if(msgs.length > 0)
+                {   
+                	
+                     obj = jQuery.parseJSON(msgs);
+                    if (obj.result == "SUCCESS")
+                    {   
+ 					    loadpage('N206ipsetting.html'); 
+                    }
+                    else
+                    {
+                        alert("CAN NOT GET NETWORK INFORMATION \n");
+                    }
+                    loadpage('N206ipsetting.html'); 
+
+                }
+                else
+                    alert("No Reply from server.");
+            },
+            error: function(xhr, textStatus, errorThrown)
+            {
+                //alert("fail")
+            }
+        }); 
+        }
+
+
+        function get_network_info() 
+        {
+
+
+        $.ajax(
+        {
+            type: "POST",
+            url: "/cgi-bin/qcmap_web_cgi.cgi",
+            data:
+            {
+                Page: "getDracaenaNetworkinfo",
+
+            },
+            dataType: "text",
+            success: function(msgs)
+            {   
+
+                if(msgs.length > 0)
+                {  
+                      obj = jQuery.parseJSON(msgs);
+                    if (obj.result == "SUCCESS")
+                    {   
+                        if (obj.dhcp_mode == 0)
+                        {
+                        	document.getElementById("div_dhcp_protocol").style.display = "none";
+							document.getElementById("input_hostname").value=obj.hostname
+                        }
+                        else
+                        {
+                        	 document.getElementById("div_dhcp_protocol").style.display = "block";
+                        	 document.getElementById("input_protocol").value = 1 ;
+                        	 document.getElementById("input_ipaddress").value = obj.ipaddress ;
+                        	 document.getElementById("input_subnet").value = obj.subnet ;
+                        	 document.getElementById("input_gateway").value = obj.gateway ;
+                        	 document.getElementById("input_dns").value = obj.dns ;
+							 document.getElementById("input_hostname").value=obj.hostname
+                        }
+                    }
+                    else
+                    {
+                        alert("CAN NOT GET NETWORK INFORMATION \n");
+                    }
+                    
+
+                }
+                else
+                    alert("No Reply from server.");
+            },
+            error: function(xhr, textStatus, errorThrown)
+            {
+                //alert("fail")
+            }
+        }); 
+        }
+        
+ 		function show_protoco (input) 
+ 		{
+ 			if (input.value == 0)
+ 			{
+ 			    document.getElementById("div_dhcp_protocol").style.display = "none";
+ 			}
+ 			else
+ 			{
+ 				document.getElementById("div_dhcp_protocol").style.display = "block";
+ 			}
+ 		}
+
+ 		function ValidateHostname(inputText) {
+
+ 				//alert("namhmtsdfdsf");
+
+ 			  var not = inputText.value.match(/[^a-z0-9-.]+/g);
+
+ 			  if (not)
+ 			  	{
+ 			  		alert ("not match regular")
+ 			  		inputText.value = "";
+
+ 			  	}
+ 			  else	
+ 			  {		
+  					//alert(inputText.value.charAt(0));
+  					// if(inputText.value.charAt(0) == '-')
+  					// {
+ 			  		//  alert ("A hostname can not start with a hyphen (-) ");
+ 			  		//   			  		inputText.value = "";
+
+  					// }
+  					// else 
+                    if (inputText.value.length < 1 || inputText.value.length > 63)
+  					{
+  							 alert ("length hostname must from 1- 63 ");
+ 			  		  			inputText.value = "";
+
+  					}
+
+  					else
+  					{
+ 						//alert("match");
+  					}
+
+ 			  	
+ 			  }
+ 			// body...
+ 		}
+
+
+ 		    function set_hotsname()
+            {   
+
+		        if(!confirm("Your box wil be rebooted after changing hostname, do you want to continue apply?"))
+					{	
+						loadpage("N206ipsetting.html");
+						return;
+					}
+
+                $.ajax(
+                {
+                    type: "POST",
+                    url: "/cgi-bin/qcmap_web_cgi.cgi",
+                    data:
+                    {
+                        Page: "setDracaenaHotsname",
+                        hostname: document.getElementById('input_hostname').value,
+                        token: "0",
+                    },
+                    dataType: "text",
+                    success: function(msgs)
+                    {   
+
+                        if(msgs.length > 0)
+                        {  
+                             obj = jQuery.parseJSON(msgs);
+                            if (obj.result == "SUCCESS")
+                            {	
+                            	alert("Set hostname success");
+                             	 
+                            }
+                            else
+                            {
+
+                             }
+                            
+
+                        }
+                        else
+                            alert("No Reply from server.");
+                    },
+                    error: function(xhr, textStatus, errorThrown)
+                    {
+                        alert("fail")
+                    }
+                });
+            }
+		</script>
+
+	</head>
+	<body  align="left" valign="left">
+	    <div style="display: flex;">
+<table class="ipsetting-table1"><tbody><tr><td style="font-size: 30;color: #8C8787;font-weight: bold;">IP settings</td></tr></tbody></table>
+
+<div style="width:40px;"></div>
+
+  <table class="ipsetting-table1"><tbody><tr><td style="font-size: 30;color: #8C8787;font-weight: bold;">Hostname settings</td></tr></tbody></table>
+</div>
+
+<div style="display: flex;">
+<table width="550px" cellpadding="10px" style="background-color: #ffffff; padding-left: 20px;">
+                <tbody><tr>
+                    <td class="Td_Name" style="width:200px; color: #B5B1B1;">Network Information</td> 
+                    <td width="90px" align="center"></td>         
+                    <td class="Td_Value">
+                    </td>
+                </tr>
+
+                <tr>
+                    <td class="Td_Name" style="width:200px; font-size:18; color: #8C8787;"> Protocol</td> 
+                    <!--td width="90px" align="center">:</td-->         
+                    <td class="Td_Value">
+                    <select id="input_protocol" onchange="show_protoco(this)" style="height: 40px; color:#B5B1B1; border-radius: 6px; border: 2px solid #B5B1B1; width: 250px; background-color: white;">
+                    <option value="0" selected="">dhcp</option>
+                    <option value="1">static</option>
+                    </select>
+                    </td>
+                </tr>
+            </tbody></table>
+
+  <div style="width:40px;"></div>
+    
+<table class="ipsetting-table2">
+                  <tbody>
+            <tr>
+            <td colspan="2">
+                <p style="color: #B5B1B1;">Hostname regular: letters from a to z, the digits from 0 to 9, the hyphen (-) or dot (.) A hostname may not start with a hyphen.</p>
+            </td>
+        </tr>
+    <tr>
+           <td class="Td_Name" style="width:200px; font-size:18; color: #8C8787;">Hostname</td> 
+                    <!--td width="90px" align="center">:</td-->         
+                    <td class="Td_Value">
+                    <input id="input_hostname" type="text" onchange="ValidateHostname(this)" style="height:40px; color:#B5B1B1; border-radius: 6px; border: 2px solid #B5B1B1;">
+                    </td>
+                </tr>
+            </tbody></table>
+</div>
+
+            <div id="div_dhcp_protocol" style="display : none;">
+            <div style="display:flex;">
+	        <table  class="ipsetting-table2">
+                <tbody style="height: 220px;">
+		        <tr>
+		            <td class="Td_Name" style="width:210px;">IP Address</td> 
+		            <td class="Td_Value">
+		            <input id="input_ipaddress" class="ipsetting-input" type="text" onchange="ValidateIPaddress(this)">
+		            </td>
+	       		</tr>
+                <br>
+	       		<tr>
+		            <td class="Td_Name" style="width:210px;">Subnet mask</td> 
+		            <td class="Td_Value">
+		            <input id="input_subnet" class="ipsetting-input" type="text" onchange="ValidateIPaddress(this)">
+		            </td>
+	       		</tr>
+                <br>
+		        <tr>
+		            <td class="Td_Name" style="width:210px;">Gateway</td> 
+		            <td class="Td_Value">
+		            <input id="input_gateway" class="ipsetting-input" type="text" onchange="ValidateIPaddress(this)">
+		            </td>
+	       		</tr>
+                <br>
+	       		<tr>
+		            <td class="Td_Name" style="width:210px;">DNS Server</td> 
+		            <td class="Td_Value">
+		            <input id="input_dns" class="ipsetting-input" type="text" onchange="ValidateIPaddress(this)">
+		            </td>
+	       		</tr>
+            </tbody>
+            </table>
+            <div style="width:40px; display: block;"></div>
+            <table style="display: block; background-color: #ffffff;width: 550px;"><tbody><tr><td></td></tr></tbody></table>
+            </div>             	
+            </div>
+        
+<div style="display:flex;">
+<table class="ipsetting-table3">
+  <tbody><tr><td style="text-align:center; vertical-align: middle;">
+<input type="button" value="Apply" onclick="set_network()">
+    </td></tr>
+  </tbody></table>
+  <div style="width:40px;"></div>
+<table class="ipsetting-table3">
+  <tbody><tr><td style="text-align:center; vertical-align: middle;">
+<input type="button" value="Apply" onclick="set_hotsname()">
+    </td></tr>  
+  </tbody></table>
+</div>
+
+	</body>
+</html>

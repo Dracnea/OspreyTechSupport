@@ -1,0 +1,498 @@
+
+<html xmlns="http://www.w3.org/1999/xhtml" >
+    <head>
+        <title>Diagnostic</title>
+        <script>
+
+ $(document).ready(function () {
+    $.getJSON("libraries.json?v=" + new Date().getTime(), function (data) {
+        generateRemoveBitstreamTable(data);
+    });
+
+    function generateRemoveBitstreamTable(data) {
+        let devFees = data.dev_fees;
+        let tableHTML = `<table style='background-color: #ffffff; padding-left: 20px; 
+                                        border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; 
+                                        width: 1160px; padding-top: 20px'>
+                            <thead>
+                                <tr>
+                                    <th style='padding: 8px; text-align: left;'>Coin</th>
+                                    <th style='padding: 8px; text-align: left;'>Developers</th>
+                                    <th style='padding: 8px; text-align: left;'>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+        $.each(devFees, function (group, coins) {
+            $.each(coins, function (coin, details) {
+                let developers = details.developers.length > 0 ? details.developers.join(", ") : "Unknown";
+                
+                tableHTML += `
+                    <tr style='border-bottom: 1px solid #ddd;'>
+                        <td style='padding: 8px;'>${coin}</td>
+                        <td style='padding: 8px;'>${developers}</td>
+                        <td style='padding: 8px;'>
+                            <button onclick="Remove('${coin}')" 
+                                    style='background-color: red; 
+                                           color: white; 
+                                           border: none; 
+                                           padding: 5px 10px; 
+                                           border-radius: 5px;
+                                           cursor: pointer;'> <!-- ✅ Con trỏ chuột thành bàn tay -->
+                                Remove Bitstream
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+        });
+
+        tableHTML += "</tbody></table>";
+        $("#remove_bitstream_table").html(tableHTML); // ✅ Cập nhật bảng trên trang
+    }
+
+});
+
+
+function Remove(removepath) {
+    console.log("➡️ Sending remove request for:", removepath); // ✅ Debug log
+
+    $.ajax({
+        type: "POST",
+        url: "/cgi-bin/qcmap_web_cgi.cgi",
+        data: {
+            Page: "DracaRemoveBistream",  // ✅ Đảm bảo API đúng
+            path: removepath,
+            token: ""
+        },
+        dataType: "text",
+        success: function (msgs) {
+            console.log("✅ Server Response:", msgs); // ✅ Debug log
+
+            if (msgs.includes("SUCCESS")) {  
+                alert("✅ Successfully removed bitstream!");
+            } else if (msgs.includes("FAILURE")) {  
+                alert("❌ Failed to remove bitstream.");
+            } else {
+                alert("⚠️ Unexpected response from server: " + msgs);
+            }
+        },
+        error: function (xhr, textStatus, errorThrown) {
+            console.error("❌ AJAX error:", textStatus, errorThrown);
+            alert("FAIL: " + xhr + " " + textStatus + " " + errorThrown);
+        }
+    });
+}
+
+
+    function btnApply(value)
+    {   
+       
+        var checkPingTrace;
+        var ip;
+
+        if(value == 1)
+          checkPingTrace = 1;
+
+        if(value == 0)
+          checkPingTrace = 0;
+
+
+        ip = document.getElementById("ipaddress").value;
+
+        if(document.getElementById("ipaddress").value.length == 0)
+        {
+          alert("Address is empty");
+          return;
+        }
+        document.getElementById("div_result").style.display = "block";
+        document.getElementById("Textarea_result_Content").innerHTML = "Please wait several seconds to get result ...";
+        $.ajax(
+        { 
+          type: "POST",
+          url: "/cgi-bin/qcmap_web_cgi.cgi",
+          data:
+          {
+          Page: "PingTrace", 
+          check:    checkPingTrace,  //Ping is 1; Trace is 0  
+          ip:  ip,                   
+          token: ""
+          },
+          dataType: "text",
+          success: function(msgs)
+          {
+            if(msgs.length > 0)
+            {
+              var obj = jQuery.parseJSON(msgs);
+              if(obj.result == "AUTH_FAIL")
+              {
+                hide_menu();
+                loadpage('QCMAP_N203login.html');
+                alert("Device is being configured by a different IP: relogin");
+                return;
+              }
+              if(obj.result == "Token_mismatch")
+              {
+                hide_menu();
+                loadpage('QCMAP_N203login.html');
+                alert("Unauthorised request: relogin");
+                return;
+              }
+              if(obj.result == "SUCCESSS")
+              {  
+                 var    str =  obj.result_content.replace(/\|/g, "<br>");       
+                // document.getElementById("Textarea_result_Content").innerHTML = str;
+                 document.getElementById("Textarea_result_Content").innerHTML = str;
+              }
+              else
+              {
+                 document.getElementById("Textarea_result_Content").innerHTML =  "Cannot ping/trace to your resquest address, please use another address";
+              }
+          }
+          else
+          {
+                  alert("No Reply from server."); 
+          }
+          },
+          error: function(xhr, textStatus, errorThrown)
+          {
+            //alert("FAIL: " + xhr + " " + textStatus + " " + errorThrown);
+          }
+        })
+    }
+
+
+    function Revert(value)
+    {   
+       
+
+        $.ajax(
+        { 
+          type: "POST",
+          url: "/cgi-bin/qcmap_web_cgi.cgi",
+          data:
+          {
+          Page: "DracaReVertbutton",                  
+          token: ""
+          },
+          dataType: "text",
+          success: function(msgs)
+          {
+            if(msgs.length > 0)
+            { 
+              alert("Done, please go to Miner Webpage");
+
+          }
+          else
+          {
+                  alert("No Reply from server."); 
+          }
+          },
+          error: function(xhr, textStatus, errorThrown)
+          {
+            //alert("FAIL: " + xhr + " " + textStatus + " " + errorThrown);
+          }
+        })
+    }
+
+ 
+
+    function SetGreenLed(action_code)
+    {   
+        $.ajax(
+        { 
+          type: "POST",
+          url: "/cgi-bin/qcmap_web_cgi.cgi",
+          data:
+          {
+          Page: "DracaenaBlinkGreenLed", 
+          action: action_code,                 
+          token: ""
+          },
+          dataType: "text",
+          success: function(msgs)
+          {
+            if(msgs.length > 0)
+            { 
+              alert("Nice, Led status is changed!");
+
+          }
+          else
+          {
+                  alert("No Reply from server."); 
+          }
+          },
+          error: function(xhr, textStatus, errorThrown)
+          {
+            //alert("FAIL: " + xhr + " " + textStatus + " " + errorThrown);
+          }
+        })
+    }
+
+    function SetRedLed(action_code)
+    {   
+        $.ajax(
+        { 
+          type: "POST",
+          url: "/cgi-bin/qcmap_web_cgi.cgi",
+          data:
+          {
+          Page: "DracaenaBlinkRedLed", 
+          action: action_code,                 
+          token: ""
+          },
+          dataType: "text",
+          success: function(msgs)
+          {
+            if(msgs.length > 0)
+            { 
+              alert("Nice, Led status is changed!");
+
+          }
+          else
+          {
+                  alert("No Reply from server."); 
+          }
+          },
+          error: function(xhr, textStatus, errorThrown)
+          {
+            //alert("FAIL: " + xhr + " " + textStatus + " " + errorThrown);
+          }
+        })
+    }
+
+    function ValidateIPaddress(inputText)
+    {
+      var ipformat = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.([0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+      if(inputText.value.match(ipformat))
+      {
+        //document.form1.text1.focus();
+        return true;
+      }
+      else
+      {
+        alert("You have entered an invalid IP address!");
+        inputText.value = "";
+        //document.form1.text1.focus();return false;
+      }
+    }
+
+    function ckenablePing()
+    {
+      if(document.getElementById("enablePing").checked == true)
+      {
+        document.getElementById("enableTrace").checked = false;
+      }
+    }
+
+    function ckenableTrace()
+    {
+      if(document.getElementById("enableTrace").checked == true)
+      {
+        document.getElementById("enablePing").checked = false;
+      }
+    }
+
+ function validateURL(inputText,type)
+            {
+                    if(inputText.value.length < 1 || inputText.value.length > 128)
+                    {
+                        alert("Length  must be between 1 and 128");
+                        inputText.value = "";
+                    }
+
+                    // var re = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/gm
+                    var re = /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?|^((http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(:[0-9]+)?$/
+
+                    var space = /\s/g
+                    // space validation
+                    if (inputText.value.match(space))
+                    {
+                        alert("Invalid Input!");
+                        inputText.value = "";
+                        return false;
+                    }
+
+                    if(inputText.value.match(re))
+                    {
+
+                    }
+                    else
+                    {
+                        alert("Invalid Input!");
+                        inputText.value = "";
+                        return false;
+                    }
+                    
+                    //type = 1 ; for check domain
+                    if(type == 1)
+                    {
+                        var re = /\//g; 
+                        if(inputText.value.match(re))
+                        {
+                            alert("Invalid Input!");
+                            inputText.value = "";
+                            return false;
+                        }                         
+                    }
+                    return true;
+            }
+
+// function handle download log
+
+function downloadLogFile() {
+  var syslogFilePath = "syslog";
+  var link = document.createElement("a");
+  link.href = syslogFilePath;
+  link.download = "syslog.log";
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  $.ajax({
+  type: "POST",
+  url: "/cgi-bin/qcmap_web_cgi.cgi",
+  data: {
+    Page: "RemoveSysLog"
+  },
+  dataType: "text",
+  success: function(response) {
+       console.log("done");
+  },
+  error: function(xhr, status, error) {
+    console.log("Error:", error);
+  }
+});
+
+
+}
+
+    $(document).ready(function() {
+      $("#downloadButton").click(function() {
+        $.ajax({
+          type: "POST",
+          url: "/cgi-bin/qcmap_web_cgi.cgi",
+          data: {
+            Page: "DownLoadSysLog"
+          },
+          dataType: "text",
+          success: function(response) {
+              downloadLogFile();
+          },
+          error: function(xhr, status, error) {
+            console.log("Error:", error);
+          }
+        });
+      });
+    });
+  </script>
+  </head>
+
+  <body >           
+  <form>
+        <table style="background-color: #ffffff; padding: 30px 20px 30px 20px;  border-radius: 12px; width: 1160px;">
+          <tr>
+            <td style="font-size: 30; color: #8C8787; font-weight: bold;">Diagnostic Tool</td>
+          </tr>
+          <tr>
+            <td   style="width:250px; font-size: 16; color: #8C8787;"> Address </td>  
+            <td   style="width:20px; color: #8C8787" >:</td>
+            <td   >
+              <input style="width: 260px; height: 40px; border-radius: 6px; border: 1px solid #B5B1B1; padding-left: 5px;"   id="ipaddress"  onchange="validateURL(this,0)"> 
+            </td>
+            <td>
+              <input type='button' value="Ping" onClick='btnApply(1)'>  
+            </td>
+          </tr>
+        </table>
+        <br><br>
+
+
+        <div id="div_result" style="display: none; padding-top: 20px; padding-left: 20px; background-color: #fffff; width: 1140px; border: 1px solid #073C7F;">
+        <table class="table" cellpadding="10px">
+        <tr>
+          <td class="Td_Name" style="width:100px;"> Result </td>
+          <td   style="width:20px;" >:</td>
+          <td class="Td_Value"> <div id="Textarea_result_Content" style="line-height: 1.8"> </div></td>          
+        </tr>
+        </table>         
+        </div>
+        <br><br>
+        <div>
+
+
+         <table style="background-color: #ffffff; padding: 30px 20px 30px 20px;  border-radius: 12px; width: 1160px;">
+            
+          <tr>
+            <td style="font-size: 30; color: #8C8787; font-weight: bold;">Change Green LED Status</td>
+ 
+          </tr>
+
+          <tr>
+      
+            <td>
+              <input type='button' value="Blink Green LED" onClick='SetGreenLed(2)'>  <input type='button' value="Turn Green LED ON" onClick='SetGreenLed(0)'> <input type='button' value="Turn Geen LED OFF" onClick='SetGreenLed(1)'>  
+            </td>
+          </tr>
+        </table>
+          <br><br>
+
+         <table style="background-color: #ffffff; padding: 30px 20px 30px 20px;  border-radius: 12px; width: 1160px;">
+            
+          <tr>
+            <td style="font-size: 30; color: #8C8787; font-weight: bold;">Change the RED LED Status</td>
+ 
+          </tr>
+
+          <tr>
+      
+            <td>
+              <input type='button' value="Blink RED LED" onClick='SetRedLed(2)'>  <input type='button' value="Turn RED LED ON" onClick='SetRedLed(0)'> <input type='button' value="Turn RED LED OFF" onClick='SetRedLed(1)'>  
+            </td>
+          </tr>
+        </table>
+          <br><br>
+
+
+          <table style="background-color: #ffffff; padding: 30px 20px 20px 20px; width: 1160px;border-radius: 12px;">
+            <tbody>
+              <tr>
+                <td style="font-size: 30; color: #8C8787; font-weight: bold;">Download syslog</td>
+              </tr>
+              <tr>
+                <td>            
+                  <p style="font-size: 16;padding: 10px 0 0 0;">Click to download</p>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 0 20px 0;"> 
+                <button id="downloadButton" style="padding: 10px;">Download syslog file</button>                     
+                </td>
+              </tr>
+            </tbody>
+          </table>          
+        </div>
+
+         <table style="background-color: #ffffff; padding: 30px 20px 30px 20px;  border-radius: 12px; width: 1160px;">
+
+          <tr>
+            <td style="font-size: 30; color: #8C8787; font-weight: bold;">Get back start/stop button</td>
+            <p>When you doens't see the start/stop button in the miner webpage, you may try "Get Back" button below </br>
+              Once you apply "Get Back" please don't forget refill your mining wallet address  at Miner Webpage </p>
+          </tr>
+
+          <tr>
+      
+            <td>
+              <input type='button' value="Get Back" onClick='Revert()'>  
+            </td>
+          </tr>
+        </table>
+        <br><br>
+            <div id="remove_bitstream_table"></div>
+        <br><br>
+ 
+             
+  </form>
+  </body>
+</html>
