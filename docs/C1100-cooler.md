@@ -113,12 +113,14 @@ The full list of captures, in case more are added:
 
 ### Product photos
 
-The Wayback Machine did not save these images. As of 2026-09-24 Osprey's image
-CDN still serves them, but they could disappear at any time.
+As of 2026-09-24 Osprey's image CDN still serves all eight, but they could
+disappear at any time. The Wayback Machine holds only **one** of them: the flat
+front view, saved at 980 × 980 on 2025-07-28 and linked in its row below. The
+other seven, including both screw-location photos, have no archived copy yet.
 
 | photo | link |
 |---|---|
-| Front, flat: two fans, bracket, PCIe edge | [bdff1d_58ab5e5f…](https://static.wixstatic.com/media/bdff1d_58ab5e5fadd04fe6bc0f2f83b9d83cce~mv2.jpg) |
+| Front, flat: two fans, bracket, PCIe edge | [bdff1d_58ab5e5f…](https://static.wixstatic.com/media/bdff1d_58ab5e5fadd04fe6bc0f2f83b9d83cce~mv2.jpg) · [archived 980 px copy, 2025-07-28](https://web.archive.org/web/20250728100132/https://static.wixstatic.com/media/bdff1d_58ab5e5fadd04fe6bc0f2f83b9d83cce~mv2.jpg/v1/fill/w_980,h_980,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/bdff1d_58ab5e5fadd04fe6bc0f2f83b9d83cce~mv2.jpg) |
 | Front, three-quarter view | [bdff1d_1aaa3459…](https://static.wixstatic.com/media/bdff1d_1aaa3459a9a5423690b9f4bfd36bfcb3~mv2.jpg) |
 | Bracket end, showing shroud thickness | [bdff1d_42224fa4…](https://static.wixstatic.com/media/bdff1d_42224fa4bd164b87b7f09e5814b40455~mv2.jpg) |
 | Rear, three-quarter: backplate and heat pipes | [bdff1d_f6289ad9…](https://static.wixstatic.com/media/bdff1d_f6289ad98b5c4146abd1fe6da991f7a2~mv2.jpg) |
