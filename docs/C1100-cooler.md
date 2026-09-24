@@ -58,16 +58,18 @@ below were measured on a cooler.
 
 | position | where | qty (per Osprey photo) | screw |
 |---|---|---|---|
-| **inner** | die clamp: the four holes around the copper contact plate | 4 | **M3 × 10 mm**, spring-loaded |
-| **outer** | the four corner brackets on the fin stacks | 4 | **M2.5 × 10 mm** |
+| **inner** | die clamp: the four holes around the copper contact plate | 4 | **M3 × 10 mm only**, spring-loaded |
+| **outer** | the four corner brackets on the fin stacks | 4 | **M2.5 × 8 mm or M2.5 × 10 mm** (both fit and grip) |
 | edge | two positions along the edge of the fin stack | 2 | **M2** (length not given) |
 
+- **The 8 mm option is for the outer M2.5 screws only.** The inner die-clamp
+  screws must be **M3 × 10 mm**. Don't shorten them to 8 mm.
 - **The cooler is metric throughout.** It is not an imperial `#4-40`/`#6-32`
   part, even though the holes can look that way under a caliper.
 - **The inner screws should be the spring-loaded type**, as used on GPU coolers.
   The spring sets the contact pressure on the die. A plain screw of the same
   thread will either under-clamp or crush it.
-- **Do not go longer than the lengths above.** The holes are blind. A screw that
+- **Go no longer than 10 mm.** The holes are blind. A screw that
   bottoms out feels tight but puts no clamping force on the die. The cooler looks
   properly mounted and makes no thermal contact. On a 75 W card that ends in an
   over-temperature shutdown.

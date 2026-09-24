@@ -36,9 +36,9 @@ collected in [docs/C1100-cooler.md](docs/C1100-cooler.md).
 
 | screw | size |
 |---|---|
-| inner (die clamp, spring-loaded) | **M3 × 10 mm** |
-| outer (corner brackets) | **M2.5 × 10 mm** |
+| inner (die clamp, spring-loaded) | **M3 × 10 mm only** |
+| outer (corner brackets) | **M2.5 × 8 mm or × 10 mm** (the 8 mm option is for the outer screws only) |
 
-The holes are blind, so don't fit longer screws: a screw that bottoms out clamps
+The holes are blind, so go no longer than 10 mm: a screw that bottoms out clamps
 nothing.
 
