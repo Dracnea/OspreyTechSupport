@@ -96,6 +96,56 @@ The remote.it and GitHub addresses are on cloud providers and change, so **block
 name, not by IP.** Blocking all of GitHub for the E335s is fine: the box only uses it
 for OTA.
 
+### Blocking them without blocking AWS or GitHub for everyone else
+
+Everything Osprey's software talks to runs on shared infrastructure: GitHub, AWS
+EC2 and CloudFront. The same IPs serve everyone else's traffic, so a router rule that
+drops those addresses for the **whole network** would also break GitHub and half of
+AWS for your PCs and servers. Two things avoid that:
+
+1. **Scope every rule to the E335s.** Put the boxes in their own address list (`e335`
+   below) and match `src-address-list=e335` in every drop rule. Then dropping a
+   GitHub or CloudFront IP only stops the E335s from reaching it. Every other device on
+   the network is untouched, whatever the address resolves to today.
+2. **Better still, allow-list instead of block-list.** An E335 only ever needs DNS
+   and NTP, plus your mining pools if a miner runs on the box. Allow exactly those
+   and drop the rest of its WAN traffic. Then you never have to chase new Osprey,
+   remote.it or GitHub addresses, and a back end that reappears under a new name
+   is blocked too.
+
+What doesn't work: blocking a single GitHub organisation or repo path. The updaters
+use HTTPS, so the router sees only the hostname `github.com` (the TLS SNI), never
+the `/PachiraMining/...` path. RouterOS's `tls-host` matcher can't tell one repo from
+another. Scoping by source address, as above, is the reliable way. Name-based
+blocking (`/ip dns static ... NXDOMAIN`) is safe network-wide only for names nobody
+else uses (the Osprey, remote.it and yoics names), **never for `github.com`**.
+
+Allow-list example (RouterOS 7; pools are matched by name, which RouterOS
+re-resolves as their DNS changes):
+
+```
+/ip firewall address-list
+add list=e335 address=<box-ip>                              comment="one line per E335"
+add list=e335-pools address=<your-pool-host>                comment="one line per pool"
+
+/ip firewall filter
+# Added in REVERSE order, each at the top (place-before=0), so they end up in this
+# order above your existing rules:
+#   1 drop DNS to anything but the router   2 allow NTP   3 allow pools   4 drop the rest to WAN
+add chain=forward src-address-list=e335 out-interface-list=WAN action=drop place-before=0 comment="e335: nothing else"
+add chain=forward src-address-list=e335 dst-address-list=e335-pools protocol=tcp action=accept place-before=0 comment="e335: pools"
+add chain=forward src-address-list=e335 protocol=udp dst-port=123 action=accept place-before=0 comment="e335: NTP"
+add chain=forward src-address-list=e335 protocol=tcp dst-port=53 action=drop place-before=0 comment="e335: router DNS only"
+add chain=forward src-address-list=e335 protocol=udp dst-port=53 action=drop place-before=0 comment="e335: router DNS only"
+```
+
+Check the order with `/ip firewall filter print where comment~"e335"`. They must come
+before any rule that accepts **new** LAN-to-WAN connections; an "accept established,
+related" rule above them is fine. The DNS drops only affect DNS servers *outside*
+the router: queries to the router itself go through the `input` chain. LAN traffic
+(your miner PC to the box's XVC and controller ports) never leaves through the WAN
+and keeps working.
+
 ### MikroTik (RouterOS 6.36+ / 7)
 
 RouterOS resolves domain names in address lists and keeps them updated:
