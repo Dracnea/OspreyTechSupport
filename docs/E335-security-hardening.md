@@ -168,13 +168,13 @@ re-resolves as their DNS changes):
 add list=e335 address=<box-ip>                              comment="one line per E335"
 add list=e335-pools address=<your-pool-host>                comment="one line per pool"
 
-/ip firewall filter print
 # Every line carries its full path, so it works whatever menu the terminal is in.
-# The catch-all drop goes to the top first. place-before=0 means "before rule 0 of
-# the last print", which is why the print above is needed. Each of the other four is
-# then placed directly before that drop, so they end up in the order written:
+# The catch-all drop goes to the top first (before the first non-dynamic rule). Each
+# of the other four is then placed directly before that drop, so they end up in the
+# order written. No print first: a long print can swallow the start of the next
+# pasted line.
 #   1-2 DNS only to the router   3 allow NTP   4 allow pools   5 drop the rest to WAN
-/ip firewall filter add chain=forward src-address-list=e335 out-interface-list=WAN action=drop place-before=0 comment="e335: nothing else"
+/ip firewall filter add chain=forward src-address-list=e335 out-interface-list=WAN action=drop place-before=[:pick [/ip firewall filter find dynamic=no] 0] comment="e335: nothing else"
 /ip firewall filter add chain=forward src-address-list=e335 protocol=udp dst-port=53 action=drop place-before=[/ip firewall filter find comment="e335: nothing else"] comment="e335: router DNS only"
 /ip firewall filter add chain=forward src-address-list=e335 protocol=tcp dst-port=53 action=drop place-before=[/ip firewall filter find comment="e335: nothing else"] comment="e335: router DNS only"
 /ip firewall filter add chain=forward src-address-list=e335 protocol=udp dst-port=123 action=accept place-before=[/ip firewall filter find comment="e335: nothing else"] comment="e335: NTP"
@@ -241,8 +241,7 @@ controller API), the box doesn't need the internet at all. Drop everything from 
 
 ```
 /ip firewall filter
-/ip firewall filter print
-/ip firewall filter add chain=forward src-address-list=e335 out-interface-list=WAN action=drop place-before=0 comment="e335: nothing else"
+/ip firewall filter add chain=forward src-address-list=e335 out-interface-list=WAN action=drop place-before=[:pick [/ip firewall filter find dynamic=no] 0] comment="e335: nothing else"
 /ip firewall filter add chain=forward src-address-list=e335 protocol=udp dst-port=123 action=accept place-before=[/ip firewall filter find comment="e335: nothing else"] comment="e335: NTP"
 ```
 
