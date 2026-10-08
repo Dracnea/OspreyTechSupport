@@ -40,15 +40,18 @@ To put everything back: `sudo bash /tmp/e335-lockdown.sh --undo`.
 
 | Service | What it does | Talks to | Script action |
 |---|---|---|---|
-| `firmware_update` (`/opt/firmware`) | OTA updater for the control-board software. Local API on `127.0.0.1:8500`. | `github.com/PachiraMining/E300_firmware_new.git` | OTA flag off, stop, mask, binary `chmod 000` |
+| `firmware_update` (`/opt/firmware`) | OTA updater for the control-board software. Local API on `127.0.0.1:8500`. | `github.com/PachiraMining/E300_firmware_new.git` | OTA flag off (API **and** `ota_status.txt` = 0), stop, disable, mask, binary `chmod 000` |
 | `algorithm_update` (`/opt/algorithm`) | OTA updater for the miner/loader packages. Local API on `127.0.0.1:8555`. | `github.com/PachiraMining/Algorithm-official-release-v2.git` | same |
-| `client_handle` (`/opt/client_handle`) | Osprey "center management" agent | `center.ospreyelectronics.io` | stop, mask, `chmod 000` |
-| `connectd`, `connectd_schannel` | remote.it agents. Three registered services: SSH 22, web 80 and a third management port. | `*.remot3.it`, `*.prod.yoics.org`, `api.weaved.com` | stop, mask, `chmod 000` |
+| `client_handle` (`/opt/client_handle`) | Osprey "center management" agent | `center.ospreyelectronics.io` | stop, disable, mask, `chmod 000` |
+| `connectd`, `connectd_schannel` | remote.it agents. Three registered services: SSH 22, web 80 and a third management port. | `*.remot3.it`, `*.prod.yoics.org`, `api.weaved.com` | stop, disable, mask, `chmod 000` |
 | `apt-daily.timer` | apt list refresh. The image has no unattended-upgrades, so nothing gets installed, but it still calls out. | `ports.ubuntu.com`, `repos.rcn-ee.com` | disabled |
 
-The script also adds an `/etc/hosts` sinkhole (`0.0.0.0`) for the Osprey and
-remote.it names, so even a restarted agent can't resolve them. Set `HOSTS_BLOCK=0` to
-skip that.
+The script also pins **`github.com`**, **`center.ospreyelectronics.io`** and the other
+Osprey and remote.it names to `127.0.0.1` in the box's `/etc/hosts`. Even if an agent
+is revived, it can't reach its back end: the OTA updaters' `git` calls fail, and the
+fleet agent and remote.it can't connect. This only affects the E335 itself. Nothing
+on the box needs GitHub except the OTA updaters, and the rest of your network is
+untouched. Set `HOSTS_BLOCK=0` to skip it.
 
 **Left running on purpose:** `controller` (`:8200`, voltages, fans and temperatures),
 `bridge_app`, the web UI (`apache2`, `webserver`), `xvc_server_1..3` (JTAG), and all
@@ -70,6 +73,43 @@ ignores that file on startup and logs `algorithm update status = ENABLE` every t
 it starts, so the setting is lost on the next reboot. That's why the script also masks
 the services and makes the binaries non-executable. Turning the switch off and
 leaving the updaters running doesn't stop algorithm updates.
+
+### Doing it by hand
+
+The same lockdown without the script, as root on the box:
+
+```sh
+# 1. Disable, then mask, the updaters and the fleet agent, so nothing can re-enable them.
+#    systemd refuses to mask a unit whose file sits in /etc/systemd/system, so move
+#    those files aside first.
+mkdir -p /etc/systemd/system/osprey-disabled
+for u in firmware_update algorithm_update client_handle connectd connectd_schannel; do
+  systemctl stop $u; systemctl disable $u
+  [ -f /etc/systemd/system/$u.service ] && mv /etc/systemd/system/$u.service /etc/systemd/system/osprey-disabled/
+  systemctl mask $u
+done
+systemctl daemon-reload
+
+# 2. OTA flags off on disk.
+echo 0 > /opt/firmware/ota_status.txt
+echo 0 > /opt/algorithm/ota_status.txt
+
+# 3. Pin the back ends to localhost.
+cat >> /etc/hosts <<'HOSTS'
+127.0.0.1 github.com
+127.0.0.1 www.github.com
+127.0.0.1 codeload.github.com
+127.0.0.1 center.ospreyelectronics.io
+HOSTS
+
+# Check
+systemctl is-enabled firmware_update algorithm_update client_handle   # masked x3
+cat /opt/firmware/ota_status.txt /opt/algorithm/ota_status.txt         # 0, 0
+getent hosts github.com center.ospreyelectronics.io                   # 127.0.0.1
+```
+
+The script does all of this plus the rest of the table, keeps backups for `--undo`,
+and is safe to re-run.
 
 ## Router blocklist
 

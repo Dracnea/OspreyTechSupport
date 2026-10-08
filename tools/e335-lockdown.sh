@@ -11,27 +11,31 @@
 #
 # Optional environment:
 #   SAMPLE=<s>     seconds of live-connection sampling in --check (default 60, 0 = skip)
-#   HOSTS_BLOCK=0  don't add the /etc/hosts sinkhole for Osprey/remote.it names
+#   HOSTS_BLOCK=0  don't pin the Osprey/remote.it/GitHub names to 127.0.0.1 in /etc/hosts
 #
 # What it changes, and why each one:
 #
 #  1. OTA flag off in both updaters, through their own local API
-#     (127.0.0.1:8500/firmware, 127.0.0.1:8555/algorithm) -- the same switch as the web UI.
+#     (127.0.0.1:8500/firmware, 127.0.0.1:8555/algorithm) -- the same switch as the web UI --
+#     AND written directly as 0 to /opt/firmware/ota_status.txt and
+#     /opt/algorithm/ota_status.txt, so it is set even when the updaters are not running.
 #     THE SWITCH ALONE IS NOT ENOUGH: algorithm_update (A2.2.12) writes
 #     /opt/algorithm/ota_status.txt = 0 but ignores it at startup and comes back
 #     ENABLED after every reboot or restart. firmware_update (N2.0.30) does keep it.
-#  2. firmware_update and algorithm_update stopped and masked -- this is what actually
+#  2. firmware_update and algorithm_update stopped, disabled and masked -- this is what actually
 #     holds. With OTA on they git-pull from GitHub every few minutes and can replace
 #     the controller, miners and loaders and restart them.
-#  3. client_handle stopped and masked: Osprey's "center management" agent, which
+#  3. client_handle stopped, disabled and masked: Osprey's "center management" agent, which
 #     talks to center.ospreyelectronics.io. If that name ever comes back under
 #     someone else's control, this is the path to your box.
-#  4. connectd and connectd_schannel stopped and masked: remote.it agents that publish
+#  4. connectd and connectd_schannel stopped, disabled and masked: remote.it agents that publish
 #     the box's SSH (22) and web UI (80) to the internet, past your router's NAT.
 #  5. The binaries above made non-executable, so nothing can start them by path.
 #  6. apt's daily timer disabled. The image has no unattended-upgrades, so this only
 #     stops pointless outbound traffic to a long-dead Ubuntu 16.04 mirror.
-#  7. /etc/hosts sinkhole for the Osprey and remote.it names (not github.com).
+#  7. /etc/hosts pins github.com, the Osprey names and the remote.it names to
+#     127.0.0.1, so even a revived agent cannot reach its back end. Nothing on the
+#     box needs GitHub except the OTA updaters. The block is rewritten on every run.
 #
 # What it leaves alone: controller (:8200, the voltage/fan/temperature API),
 # bridge_app, webserver/apache (web UI), xvc_server_*, the miners and loaders.
@@ -67,7 +71,9 @@ TIMERS="apt-daily.timer apt-daily-upgrade.timer"
 BINS="/opt/firmware/firmware_update /opt/algorithm/algorithm_update /opt/client_handle/client_handle
       /usr/bin/connectd.arm-linaro-pi /usr/bin/connectd_schannel.arm-linaro-pi"
 OTA_APIS="8500/firmware 8555/algorithm"
-SINK_NAMES="center.ospreyelectronics.io ospreyelectronics.io vptr.com dracaena.io
+OTA_FILES="/opt/firmware/ota_status.txt /opt/algorithm/ota_status.txt"
+SINK_NAMES="github.com www.github.com codeload.github.com
+            center.ospreyelectronics.io ospreyelectronics.io vptr.com dracaena.io
             remote.it www.remote.it remot3.it api.remot3.it fe1.remot3.it fe2.remot3.it
             fe3.remot3.it fe4.remot3.it mrtg.remot3.it api.weaved.com apilb.yoics.net
             chat18.prod.yoics.org chat19.prod.yoics.org chat20.prod.yoics.org"
@@ -91,7 +97,7 @@ report() {
   for ep in $OTA_APIS; do
     echo "  $ep: $(curl -s -m5 "http://127.0.0.1:$ep/getOtaUpdate" || true)" | sed 's/: $/: not running/'
   done
-  [ -f /opt/firmware/ota_status.txt ] && echo "  /opt/firmware/ota_status.txt = $(cat /opt/firmware/ota_status.txt) (1 = OTA on)"
+  for f in $OTA_FILES; do [ -f "$f" ] && echo "  $f = $(cat "$f") (want 0)"; done
   echo "-- vendor services (want: masked / inactive)"
   for u in $UNITS; do
     e=$(systemctl is-enabled "$u" 2>/dev/null); printf '  %-20s %s / %s\n' "$u" "${e:-not installed}" "$(systemctl is-active "$u" 2>/dev/null)"
@@ -107,7 +113,8 @@ report() {
   pgrep -f 'firmware_update|algorithm_update|client_handle|connectd' >/dev/null || echo "  none"
   echo "-- remote.it registrations on this box"
   ls /etc/connectd/services/*.conf 2>/dev/null | sed 's/^/  /' || echo "  none"
-  echo "-- /etc/hosts sinkhole: $(grep -q "$MARK_BEGIN" /etc/hosts && echo present || echo absent)"
+  echo "-- /etc/hosts pins (want 127.0.0.1): $(grep -q "$MARK_BEGIN" /etc/hosts && echo present || echo absent)"
+  for n in github.com center.ospreyelectronics.io; do echo "  $n -> $(getent hosts $n | awk '{print $1}' | head -1)"; done
   echo "-- services you need (want: active)"
   for u in controller xvc_server_1 xvc_server_2 xvc_server_3; do
     unit_exists "$u" && printf '  %-20s %s\n' "$u" "$(systemctl is-active "$u")"
@@ -139,6 +146,9 @@ apply() {
   mkdir -p "$BK"
   echo "-- 1. OTA off"
   ota_set 0
+  for f in $OTA_FILES; do
+    [ -d "$(dirname "$f")" ] && echo 0 > "$f" && echo "  $f = 0"
+  done
   echo "-- 2-4. stop, back up and mask vendor services"
   for u in $UNITS; do
     unit_exists "$u" || { echo "  $u: not installed"; continue; }
@@ -170,13 +180,11 @@ apply() {
     systemctl disable --now "$u" >/dev/null 2>&1 && echo "  $u disabled"
   done
   if [ "$HOSTS_BLOCK" = 1 ]; then
-    echo "-- 7. /etc/hosts sinkhole"
-    if grep -q "$MARK_BEGIN" /etc/hosts; then echo "  already present"
-    else
-      cp -n /etc/hosts "$BK/hosts.orig"
-      { echo "$MARK_BEGIN"; for n in $SINK_NAMES; do echo "0.0.0.0 $n"; done; echo "$MARK_END"; } >> /etc/hosts
-      echo "  added $(echo $SINK_NAMES | wc -w) names"
-    fi
+    echo "-- 7. /etc/hosts: pin back-end names to 127.0.0.1"
+    cp -n /etc/hosts "$BK/hosts.orig"
+    sed -i "/^$MARK_BEGIN\$/,/^$MARK_END\$/d" /etc/hosts
+    { echo "$MARK_BEGIN"; for n in $SINK_NAMES; do echo "127.0.0.1 $n"; done; echo "$MARK_END"; } >> /etc/hosts
+    echo "  pinned $(echo $SINK_NAMES | wc -w) names"
   fi
 }
 
@@ -197,7 +205,7 @@ undo() {
   for u in $TIMERS; do
     systemctl list-unit-files "$u" --no-legend 2>/dev/null | grep -q . && systemctl enable --now "$u" >/dev/null 2>&1
   done
-  echo "-- remove /etc/hosts sinkhole"
+  echo "-- remove /etc/hosts pins"
   sed -i "/^$MARK_BEGIN\$/,/^$MARK_END\$/d" /etc/hosts
   echo "  firmware OTA left OFF (algorithm_update re-enables its own at start-up) -- see the script header."
 }
