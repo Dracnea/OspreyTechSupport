@@ -169,17 +169,26 @@ add list=e335 address=<box-ip>                              comment="one line pe
 add list=e335-pools address=<your-pool-host>                comment="one line per pool"
 
 /ip firewall filter
-# Added in REVERSE order, each at the top (place-before=0), so they end up in this
-# order above your existing rules:
-#   1 drop DNS to anything but the router   2 allow NTP   3 allow pools   4 drop the rest to WAN
+print
+# The catch-all drop goes to the top first. place-before=0 means "before rule 0 of
+# the last print", which is why the print above is needed. Each of the other four is
+# then placed directly before that drop, so they end up in the order written:
+#   1-2 DNS only to the router   3 allow NTP   4 allow pools   5 drop the rest to WAN
 add chain=forward src-address-list=e335 out-interface-list=WAN action=drop place-before=0 comment="e335: nothing else"
-add chain=forward src-address-list=e335 dst-address-list=e335-pools protocol=tcp action=accept place-before=0 comment="e335: pools"
-add chain=forward src-address-list=e335 protocol=udp dst-port=123 action=accept place-before=0 comment="e335: NTP"
-add chain=forward src-address-list=e335 protocol=tcp dst-port=53 action=drop place-before=0 comment="e335: router DNS only"
-add chain=forward src-address-list=e335 protocol=udp dst-port=53 action=drop place-before=0 comment="e335: router DNS only"
+add chain=forward src-address-list=e335 protocol=udp dst-port=53 action=drop place-before=[find comment="e335: nothing else"] comment="e335: router DNS only"
+add chain=forward src-address-list=e335 protocol=tcp dst-port=53 action=drop place-before=[find comment="e335: nothing else"] comment="e335: router DNS only"
+add chain=forward src-address-list=e335 protocol=udp dst-port=123 action=accept place-before=[find comment="e335: nothing else"] comment="e335: NTP"
+add chain=forward src-address-list=e335 dst-address-list=e335-pools protocol=tcp action=accept place-before=[find comment="e335: nothing else"] comment="e335: pools"
 ```
 
-Check the order with `/ip firewall filter print where comment~"e335"`. They must come
+Do not rely on "add them in reverse order, each with place-before=0": in a pasted
+block every `0` refers to the same rule from the last `print`, so the rules land in
+the order they were typed, with the catch-all drop on top, and every pool connection
+is dropped. To start over:
+`/ip firewall filter remove [find comment~"^e335: "]`, then paste the block again.
+
+Check the order with `/ip firewall filter print stats where comment~"e335"`: "nothing else" must
+be last, and once a box has talked to its pool the "pools" counter is above zero. They must come
 before any rule that accepts **new** LAN-to-WAN connections; an "accept established,
 related" rule above them is fine. The DNS drops only affect DNS servers *outside*
 the router: queries to the router itself go through the `input` chain. LAN traffic
@@ -232,8 +241,9 @@ controller API), the box doesn't need the internet at all. Drop everything from 
 
 ```
 /ip firewall filter
-add chain=forward src-address-list=e335 protocol=udp dst-port=123 action=accept place-before=0
-add chain=forward src-address-list=e335 out-interface-list=WAN action=drop
+print
+add chain=forward src-address-list=e335 out-interface-list=WAN action=drop place-before=0 comment="e335: nothing else"
+add chain=forward src-address-list=e335 protocol=udp dst-port=123 action=accept place-before=[find comment="e335: nothing else"] comment="e335: NTP"
 ```
 
 If a miner runs on the box itself, allow its pool's host and port before the drop rule.
